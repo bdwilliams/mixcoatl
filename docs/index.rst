@@ -17,6 +17,7 @@ Contents:
    readme
    source/source
    dcm_utils/dcm_utils
+   metacoatl/metacoatl
    additional_information/additional_information
 
 
