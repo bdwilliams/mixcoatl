@@ -28,8 +28,8 @@ if __name__ == '__main__':
     else:
         result = server.destroy()
 
-    if result['jobs'][0]['jobId']:
-        print result['jobs'][0]['jobId']
-    else:
-        print("Failed to terminate the server.")
+    if isinstance(result, dict):
+        print(result['jobs'][0]['jobId'])
+    elif isinstance(result, unicode):
+        print(result)
         sys.exit(1)
