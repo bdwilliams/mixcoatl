@@ -261,6 +261,9 @@ class Server(Resource):
         """`str` - The time the server automatically pauses."""
         return self.__pause_after
 
+    @pause_after.setter
+    def pause_after(self, p):
+        self.__pause_after = p
 
 
     @property
@@ -323,6 +326,12 @@ class Server(Resource):
     def extend_terminate(self, extend):
         p = '%s/%s' % (self.PATH, str(self.server_id))
         qopts = {'terminateAfter':extend}
+        return self.delete(p, params=qopts)
+
+    @required_attrs(['server_id'])
+    def extend_pause(self, extend):
+        p = '%s/%s' % (self.PATH, str(self.server_id))
+        qopts = {'pauseAfter':extend}
         return self.delete(p, params=qopts)
 
     @required_attrs(['server_id'])
