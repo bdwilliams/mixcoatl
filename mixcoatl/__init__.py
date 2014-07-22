@@ -1,3 +1,4 @@
+""" Mixcoatl Configuration """
 __title__ = 'mixcoatl'
 __version__ = '0.3.4'
 __author__ = 'Dell Cloud Manager Team'
