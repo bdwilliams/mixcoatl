@@ -1,23 +1,42 @@
+"""
+mixcoatl.network.firewall_rule
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.decorators.validations import required_attrs
-from mixcoatl.admin.job import Job
 from mixcoatl.utils import camel_keys
 from mixcoatl.utils import camelize
 
 import json
 
+# pylint: disable-msg=R0902,R0904
 class FirewallRule(Resource):
+    """A firewall rule is an ingress or egress permission that grants or denies
+    the right for traffic from a specific network source to a specific network
+    destination."""
     PATH = 'network/FirewallRule'
     COLLECTION_NAME = 'rules'
     PRIMARY_KEY = 'firewall_rule_id'
 
-    def __init__(self, firewall_rule_id = None, *args, **kwargs):
+    def __init__(self, firewall_rule_id = None, **kwargs):
         if 'detail' in kwargs:
             self.request_details = kwargs['detail']
 
         Resource.__init__(self)
         self.__firewall_rule_id = firewall_rule_id
+        self.__start_port = None
+        self.__direction = None
+        self.__protocol = None
+        self.__network_address = None
+        self.__firewall = None
+        self.__end_port = None
+        self.__rule_provider_id = None
+        self.end_port = None
+        self.start_port = None
+        self.direction = None
+        self.network_address = None
+        self.protocol = None
 
     @property
     def firewall_rule_id(self):
@@ -25,65 +44,27 @@ class FirewallRule(Resource):
         return self.__firewall_rule_id
 
     @lazy_property
-    def direction(self):
-        """`str` - The direction of the rule: `ingress` or `egress`"""
-        return self.__direction
-
-    @direction.setter
-    def direction(self, d):
-        self.__direction = d
-
-    @lazy_property
     def firewall(self):
         """`dict` - The firewall to which this rule belongs"""
+        # pylint: disable-msg=E0202
         return self.__firewall
 
     @firewall.setter
     def firewall(self, fwid):
+        """Set the firewall."""
         self.__firewall = {'firewall_id': fwid}
-
-    @lazy_property
-    def network_address(self):
-        """`str` - The CIDR for the source or destination of traffic"""
-        return self.__network_address
-
-    @network_address.setter
-    def network_address(self, addr):
-        self.__network_address = addr
-
-    @lazy_property
-    def protocol(self):
-        """`str` - The network protocol for this rule"""
-        return self.__protocol
-
-    @protocol.setter
-    def protocol(self, p):
-        self.__protocol = p
-
-    @lazy_property
-    def start_port(self):
-        """`int` or `None` - The start port for this rule"""
-        return self.__start_port
-
-    @start_port.setter
-    def start_port(self, p):
-        self.__start_port = p
-
-    @lazy_property
-    def end_port(self):
-        """`int` or `None` - The end port for this rule"""
-        return self.__end_port
-
-    @end_port.setter
-    def end_port(self, p):
-        self.__end_port = p
 
     @lazy_property
     def rule_provider_id(self):
         """`str` - Provider's firewall rule ID"""
         return self.__rule_provider_id
 
-    @required_attrs(['firewall', 'network_address', 'protocol', 'direction', 'start_port', 'end_port'])
+    @required_attrs(['firewall', 
+                    'network_address', 
+                    'protocol', 
+                    'direction', 
+                    'start_port', 
+                    'end_port'])
     def create(self, **kwargs):
         """Create a new firewall rule
 
@@ -157,8 +138,8 @@ class FirewallRule(Resource):
         """
 
         params = {}
-        r = Resource(cls.PATH)
-        r.request_details = 'none'
+        res = Resource(cls.PATH)
+        res.request_details = 'none'
         if 'detail' in kwargs:
             request_details = kwargs['detail']
         else:
@@ -170,37 +151,45 @@ class FirewallRule(Resource):
             keys_only = False
 
         params['firewallId'] = firewall_id
-        x = r.get(params=params)
-        if r.last_error is None:
-            keys = [i[camelize(cls.PRIMARY_KEY)] for i in x[cls.COLLECTION_NAME]]
+        fwrs = res.get(params=params)
+        if res.last_error is None:
+            keys = [fwrs[camelize(cls.PRIMARY_KEY)] \
+            for fwr in fwrs[cls.COLLECTION_NAME]]
             if keys_only is True:
                 rules = keys
             else:
                 rules = []
-                for i in x[cls.COLLECTION_NAME]:
-                    key = i[camelize(cls.PRIMARY_KEY)]
+                for fwr in fwrs[cls.COLLECTION_NAME]:
+                    key = fwr[camelize(cls.PRIMARY_KEY)]
                     rule = cls(key)
                     rule.request_details = request_details
                     rule.load()
                     rules.append(rule)
             return rules
         else:
-            raise FirewallRuleException(r.last_error)
+            raise FirewallRuleException(res.last_error)
 
+# pylint: disable-msg=R0913
 def add_rule(firewall_id, network, proto, direction, start, end, reason):
     """Add a firewall rule to a firewall
 
-    >>> f = add_rule(136663, '10.1.1.1/32', 'TCP', 'INGRESS', 15000, 15000, 'inbound api')
+    >>> f = add_rule(136663, 
+                     '10.1.1.1/32', 
+                     'TCP', 
+                     'INGRESS', 
+                     15000, 
+                     15000, 
+                     'inbound api')
 
     """
-    f = FirewallRule()
-    f.firewall = firewall_id
-    f.network_address = network
-    f.protocol = proto
-    f.direction = direction
-    f.start_port = start
-    f.end_port = end
-    return f.create(reason=reason)
+    firewall = FirewallRule()
+    firewall.firewall = firewall_id
+    firewall.network_address = network
+    firewall.protocol = proto
+    firewall.direction = direction
+    firewall.start_port = start
+    firewall.end_port = end
+    return firewall.create(reason=reason)
 
 def delete_rule(rule_id, reason='rule removed by mixcoatl'):
     """Remove a firewall rule
@@ -212,8 +201,8 @@ def delete_rule(rule_id, reason='rule removed by mixcoatl'):
     :returns: `bool`
     :raises: :class:`FirewallRuleException`
     """
-    f = FirewallRule(rule_id)
-    return f.remove(reason)
+    firewall = FirewallRule(rule_id)
+    return firewall.remove(reason)
 
 class FirewallRuleException(BaseException):
     """Generic Exception for FirewallRules"""

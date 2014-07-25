@@ -1,17 +1,44 @@
+"""
+mixcoatl.platform.storage_object
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.admin.job import Job
 from mixcoatl.decorators.lazy import lazy_property
 
+# pylint: disable-msg=R0902,R0904
 class StorageObject(Resource):
-    """A blob or container in which blobs are stored in a cloud storage system."""
+    """A blob or container in which blobs are stored in a cloud 
+    storage system."""
 
     PATH = 'platform/StorageObject'
     COLLECTION_NAME = 'storageObjects'
     PRIMARY_KEY = 'storage_object_id'
 
-    def __init__(self, storage_object_id=None, *args, **kwargs):
+    def __init__(self, storage_object_id=None):
         Resource.__init__(self)
         self.__storage_object_id = storage_object_id
+        self.__budget = None
+        self.__e_type = None
+        self.__cloud = None
+        self.__container = None
+        self.__find_free_name = None
+        self.__last_modified_timestamp = None
+        self.__label = None
+        self.__owning_user = None
+        self.__owning_group = None
+        self.__provider_id = None
+        self.__read_public = None
+        self.__read_group = None
+        self.__size = None
+        self.__write_any = None
+        self.__write_code = None
+        self.__write_group = None
+        self.__created_timestamp = None
+        self.__name = None
+        self.__read_any = None
+        self.__read_code = None
+        self.__region = None
 
     @property
     def storage_object_id(self):
@@ -20,7 +47,8 @@ class StorageObject(Resource):
 
     @lazy_property
     def budget(self):
-        """`int` - The budget to which the data stored in a container/bucket is billed against."""
+        """`int` - The budget to which the data stored in a 
+        container/bucket is billed against."""
         return self.__budget
 
     @lazy_property
@@ -40,12 +68,16 @@ class StorageObject(Resource):
 
     @lazy_property
     def find_free_name(self):
-        """`bool` - If this field is true and there is a name conflict in the cloud DCM will append numbers to the end of the name until it finds an available name for the storage object. If the field is false and there is a name conflict an error will be thrown."""
+        """`bool` - If this field is true and there is a name conflict in the 
+        cloud DCM will append numbers to the end of the name until it finds an 
+        available name for the storage object. If the field is false and there
+        is a name conflict an error will be thrown."""
         return self.__find_free_name
 
     @lazy_property
     def created_timestamp(self):
-        """`str` - The time when this storage object was initially created in cloud storage."""
+        """`str` - The time when this storage object was initially created in 
+        cloud storage."""
         return self.__created_timestamp
 
     @lazy_property
@@ -55,17 +87,20 @@ class StorageObject(Resource):
 
     @lazy_property
     def last_modified_timestamp(self):
-        """`str` - The time when this storage object last had changes made to it."""
+        """`str` - The time when this storage object last had changes 
+        made to it."""
         return self.__last_modified_timestamp
 
     @lazy_property
     def name(self):
-        """`str` - A user-friendly name you use to identify the storage object."""
+        """`str` - A user-friendly name you use to identify the storage 
+        object."""
         return self.__name
 
     @lazy_property
     def owning_group(self):
-        """`str` - The group owning this container and governing permissions on the container."""
+        """`str` - The group owning this container and governing permissions 
+        on the container."""
         return self.__owning_group
 
     @lazy_property
@@ -75,27 +110,34 @@ class StorageObject(Resource):
 
     @lazy_property
     def provider_id(self):
-        """`str` - The unique identifier in the cloud storage system for this storage object."""
+        """`str` - The unique identifier in the cloud storage system for this 
+        storage object."""
         return self.__provider_id
 
     @lazy_property
     def read_any(self):
-        """`bool` - Indicates that anyone with access to this account can read items stored in the container. Only for containers."""
+        """`bool` - Indicates that anyone with access to this account can read
+        items stored in the container. Only for containers."""
         return self.__read_any
 
     @lazy_property
     def read_code(self):
-        """`bool` - Indicates that anyone with provisioning rights to the billing code under which this container is billed can read items stored in the container. Only for containers."""
+        """`bool` - Indicates that anyone with provisioning rights to the 
+        billing code under which this container is billed can read items 
+        stored in the container. Only for containers."""
         return self.__read_code
 
     @lazy_property
     def read_group(self):
-        """`bool` - Indicates that anyone in the same group owning this container can read items stored in the container. Only valid for containers."""
+        """`bool` - Indicates that anyone in the same group owning this 
+        container can read items stored in the container. Only valid for 
+        containers."""
         return self.__read_group
 
     @lazy_property
     def read_public(self):
-        """`bool` - Indicates that items in this container should be made public to the entire world. Only valid for containers."""
+        """`bool` - Indicates that items in this container should be made 
+        public to the entire world. Only valid for containers."""
         return self.__read_public
 
     @lazy_property
@@ -105,22 +147,27 @@ class StorageObject(Resource):
 
     @lazy_property
     def size(self):
-        """`int` - The file size for the storage object. Only valid for objects of type 'blob'."""
+        """`int` - The file size for the storage object. Only valid for 
+        objects of type 'blob'."""
         return self.__size
 
     @lazy_property
     def write_any(self):
-        """`bool` - Indicates that anyone with access to this account can write to this container. Valid only for containers."""
+        """`bool` - Indicates that anyone with access to this account can 
+        write to this container. Valid only for containers."""
         return self.__write_any
 
     @lazy_property
     def write_code(self):
-        """`bool` - Indicates that anyone with provisioning rights to the billing code under which this container is billed can write to the container. Valid only for containers."""
+        """`bool` - Indicates that anyone with provisioning rights to the 
+        billing code under which this container is billed can write to the 
+        container. Valid only for containers."""
         return self.__write_code
 
     @lazy_property
     def write_group(self):
-        """`bool` - Indicates that anyone in the same group owning this container can write to this container. Valid only for containers."""
+        """`bool` - Indicates that anyone in the same group owning this 
+        container can write to this container. Valid only for containers."""
         return self.__write_group
 
     def reload(self):
@@ -138,7 +185,7 @@ class StorageObject(Resource):
                 return self.last_error
 
     @classmethod
-    def all(cls, region_id, **kwargs):
+    def all(cls, region_id):
         """Get a list of all known storage objects.
 
         >>> StorageObject.all(region_id=100)
@@ -147,16 +194,19 @@ class StorageObject(Resource):
         :returns: list -- a list of :class:`StorageObject`
         :raises: StorageObjectException
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
 
         qopts = {'regionId': region_id}
-        s = r.get(params=qopts)
+        get_data = res.get(params=qopts)
 
-        if r.last_error is None:
-            storage_objects = [cls(storage_object['storageObjectId']) for storage_object in s[cls.COLLECTION_NAME]]
+        if res.last_error is None:
+            storage_objects = [cls(storage_object['storageObjectId']) \
+            for storage_object in get_data[cls.COLLECTION_NAME]]
             return storage_objects
         else:
-            raise StorageObjectException(r.last_error)
+            raise StorageObjectException(res.last_error)
 
-class StorageObjectException(BaseException): pass
+class StorageObjectException(BaseException): 
+    """Storage Object Exception"""
+    pass

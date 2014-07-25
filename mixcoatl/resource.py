@@ -1,7 +1,6 @@
 """
 mixcoatl.resource
 ------------------
-
 """
 from mixcoatl.settings.load_settings import settings
 import mixcoatl.auth as auth
@@ -9,15 +8,16 @@ import requests as r
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.utils import camel_keys
 
+# pylint: disable-msg=R0902
 class Resource(object):
-    """The base class for all resources returned from an enStratus API call
+    """The base class for all resources returned from an DCM API call
     By default all resources are largely represented as a `dict`-alike object
-    that mirrors the JSON response from the enStratus API with keys converted
+    that mirrors the JSON response from the DCM API with keys converted
     from camel-case to snake-case.
 
     For instance:
 
-        * The enStratus API JSON for a resource looks something like this:
+        * The DCM API JSON for a resource looks something like this:
 
             .. code-block:: yaml
 
@@ -30,16 +30,22 @@ class Resource(object):
         * All keys (nested or top-level) will be converted to snake-case:
             - `someId` becomes `some_id`
             - `cloudId` becomes `cloud_id`
-        * The top-level keys will be converted to getters (and in some cases - setters) on the Resource.
-            - `some_id` will now be the resource's primary identifier: `resource.some_id`
-            - `name` will likely be a getter and a setter as `name` is usually a mutable attributes
-            - `cloud` will be converted to a setter with a value of `{'cloud_id':123345}`
-        * In cases where a setter would actually need to set a nested value, it will do so. However
-            the getter will still return the original data structure as appropriate
+        * The top-level keys will be converted to getters 
+            (and in some cases - setters) on the Resource.
+            - `some_id` will now be the resource's primary identifier: 
+            `resource.some_id`
+            - `name` will likely be a getter and a setter as `name` is 
+            usually a mutable attributes
+            - `cloud` will be converted to a setter with a value of 
+            `{'cloud_id':123345}`
+        * In cases where a setter would actually need to set a nested value, 
+        it will do so. However the getter will still return the original data 
+        structure as appropriate
 
         .. warning::
 
-            The Resource object, while looking much like a `dict`, is not a `dict` proper.
+            The Resource object, while looking much like a `dict`, is not a 
+            `dict` proper.
             If you need an actual `dict`, call `to_dict()` on your instance.
     """
 
@@ -76,28 +82,31 @@ class Resource(object):
         self.__payload_format = 'json'
         self.__request_details = request_details
         self.pending_changes = {}
+        self.loaded = False
 
     def __props(self):
         """List of properties and lazy properties for a given resource"""
-        p = [k for k, v in self.__class__.__dict__.items() if type(v) in [lazy_property, property]]
-        rp = ['last_error', 'path', 'last_request', 'current_job', 'request_details']
-        return p + rp
+        items = self.__class__.__dict__.items()
+        prop = [k for k, v in items if type(v) in [lazy_property, property]]
+        rp1 = ['last_error', 'path', 'last_request', \
+                    'current_job', 'request_details']
+        return prop + rp1
 
 
     def __repr__(self):
         from mixcoatl.utils import convert
-        d = {}
-        for x in self.__props():
+        data = {}
+        for val in self.__props():
             try:
-                if x == 'last_request':
-                    d[x] = str(getattr(self, x))
+                if val == 'last_request':
+                    data[val] = str(getattr(self, val))
                 else:
-                    d[x] = getattr(self, x)
+                    data[val] = getattr(self, val)
             except AttributeError:
-                d[x] = None
+                data[val] = None
             except KeyError:
-                d[x] = None
-        return repr(convert(d))
+                data[val] = None
+        return repr(convert(data))
 
     @property
     def request_details(self):
@@ -106,6 +115,7 @@ class Resource(object):
 
     @request_details.setter
     def request_details(self, level):
+        """Sets the level of detail used in the API call"""
         self.__request_details = level
 
     @property
@@ -115,6 +125,7 @@ class Resource(object):
 
     @payload_format.setter
     def payload_format(self, p_format):
+        """Sets the format of the payload"""
         self.__payload_format = p_format
 
     @property
@@ -123,8 +134,9 @@ class Resource(object):
         return self.__path
 
     @path.setter
-    def path(self, p):
-        self.__path = p
+    def path(self, path):
+        """Sets the path used in the API request"""
+        self.__path = path
 
     @property
     def last_request(self):
@@ -132,17 +144,19 @@ class Resource(object):
         return self.__last_request
 
     @last_request.setter
-    def last_request(self, lr):
-        self.__last_request = lr
+    def last_request(self, last_request):
+        """Sets the last request of the most recent API call"""
+        self.__last_request = last_request
 
     @property
     def last_error(self):
-        """The last error message, if any, returned from the most recent API call"""
+        """The last error message, if any, from the most recent API call"""
         return self.__last_error
 
     @last_error.setter
-    def last_error(self, le):
-        self.__last_error = le
+    def last_error(self, last_error):
+        """Sets the last error, if any, of the most recent API call"""        
+        self.__last_error = last_error
 
     @property
     def current_job(self):
@@ -150,48 +164,52 @@ class Resource(object):
         return self.__current_job
 
     @current_job.setter
-    def current_job(self, cj):
-        self.__current_job = cj
+    def current_job(self, current_job):
+        """Sets the current job from the last API call"""
+        self.__current_job = current_job
 
     @property
     def params(self):
+        """The parameters that are passed to a specific function."""
         return self.__params
 
     @params.setter
-    def params(self, p):
-        self.__params = p
+    def params(self, params):
+        """Sets the available paramaters"""
+        self.__params = params
 
     def load(self):
         """(Re)load the current object's attributes from an API call"""
         from mixcoatl.utils import uncamel_keys
         reserved_words = ['type']
-        p = self.PATH+"/"+str(getattr(self, self.__class__.PRIMARY_KEY))
+        path = self.PATH+"/"+str(getattr(self, self.__class__.PRIMARY_KEY))
 
         #self.request_details = 'extended'
-        s = self.get(p, params=camel_keys(self.params))
+        scopeit = self.get(path, params=camel_keys(self.params))
         if self.last_error is None:
-            scope = uncamel_keys(s[self.__class__.COLLECTION_NAME][0])
+            scope = uncamel_keys(scopeit[self.__class__.COLLECTION_NAME][0])
             for k in scope.keys():
                 if k in reserved_words:
                     the_key = 'e_'+k
                 else:
                     the_key = k
-                nk = '_%s__%s' % (self.__class__.__name__, the_key)
+                new_key = '_%s__%s' % (self.__class__.__name__, the_key)
                 if the_key not in self.__props():
                     raise AttributeError('Key found without accessor: %s' % k)
                 else:
-                    setattr(self, nk, scope[k])
+                    setattr(self, new_key, scope[k])
                     self.loaded = True
         else:
             return self.last_error
 
-    def __doreq(self, method, *args, **kwargs):
+    # pylint: disable-msg=R0911,R0912,R0915
+    def __doreq(self, method, **kwargs):
         """Performs the actual API call
 
         * calls `auth.get_sig` for signed headers
         * issues the requested :attr:`method` against the API endpoint
         * Handles requests appropriately based on sync/async nature of the call
-            based on enStratus API documentation
+            based on DCM API documentation
         """
         failures = [400, 403, 404, 409, 500, 501, 503]
         sig = auth.get_sig(method, self.path)
@@ -203,7 +221,7 @@ class Resource(object):
         elif self.payload_format == 'json':
             payload_format = 'application/json'
         else:
-            raise AttributeError('Wrong payload format: %s' % self.payload_format)
+            raise AttributeError('Wrong format: %s' % self.payload_format)
 
         headers = {'x-esauth-access': sig['access_key'],
         'x-esauth-timestamp': str(sig['timestamp']),
@@ -212,7 +230,11 @@ class Resource(object):
         'Accept': payload_format,
         'User-Agent': sig['ua']}
 
-        results = r.request(method, url, headers=headers, verify=ssl_verify, **kwargs)
+        results = r.request(method, 
+                            url, 
+                            headers=headers, 
+                            verify=ssl_verify, 
+                            **kwargs)
 
         self.last_error = None
         self.last_request = results
@@ -280,33 +302,34 @@ class Resource(object):
                 return False
 
     def set_path(self, path=None):
+        """Sets API path"""
         if path is None:
             path = self.path
         else:
             self.path = path
 
     def get(self, path=None, **kwargs):
-        """Perform an HTTP `GET` against the API endpoint for the current resource"""
+        """Perform an HTTP `GET` against the API for the resource"""
         self.set_path(path)
         return self.__doreq('GET', **kwargs)
 
     def post(self, path=None, **kwargs):
-        """Perform an HTTP `POST` against the API endpoint for the current resource"""
+        """Perform an HTTP `POST` against the API for the resource"""
         self.set_path(path)
         return self.__doreq('POST', **kwargs)
 
     def put(self, path=None, **kwargs):
-        """Perform an HTTP `PUT` against the API endpoint for the current resource"""
+        """Perform an HTTP `PUT` against the API for the resource"""
         self.set_path(path)
         return self.__doreq('PUT', **kwargs)
 
     def delete(self, path=None, **kwargs):
-        """Perform an HTTP `DELETE` against the API endpoint for the current resource"""
+        """Perform an HTTP `DELETE` against the API for the resource"""
         self.set_path(path)
         return self.__doreq('DELETE', **kwargs)
 
     def pprint(self):
-        """The prettyprint formatted representation of the current resource"""
+        """The prettyprint formatted representation of the resource"""
         import pprint
         pprint.pprint(eval(repr(self)))
 
@@ -315,6 +338,7 @@ class Resource(object):
         return eval(repr(self))
 
     def track_change(self, var, prev, new):
+        """Tracks pending changes"""
         if prev == new:
             pass
         else:

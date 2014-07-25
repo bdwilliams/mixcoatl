@@ -1,4 +1,7 @@
-"""Implements the enStratus Firewall API"""
+"""
+mixcoatl.network.firewall
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.decorators.validations import required_attrs
@@ -8,22 +11,41 @@ from mixcoatl.admin.job import Job
 
 import json
 
+# pylint: disable-msg=R0902,R0904
 class Firewall(Resource):
+    """A firewall manages rules for filtering traffic passing through a virtual
+    firewall, either ingress, egress, or both."""
     PATH = 'network/Firewall'
     COLLECTION_NAME = 'firewalls'
     PRIMARY_KEY = "firewall_id"
 
-    def __init__(self, firewall_id = None, *args, **kwargs):
+    def __init__(self, firewall_id = None, **kwargs):
         Resource.__init__(self)
 
         if 'detail' in kwargs:
             self.request_details = kwargs['detail']
 
         self.__firewall_id = firewall_id
+        self.__status = None
+        self.__owning_account = None
+        self.__owning_user = None
+        self.__cloud = None
+        self.__customer = None
+        self.__removable = None
+        self.__description = None
+        self.__budget = None
+        self.__name = None
+        self.__provider_id = None
+        self.__owning_groups = None
+        self.__label = None
+        self.__rules = None
+        self.__region = None
+        self.description = None
+        self.label = None
 
     @property
     def firewall_id(self):
-        """`str` - The unique enStratus ID for this firewall"""
+        """`str` - The unique DCM ID for this firewall"""
         return self.__firewall_id
 
     @lazy_property
@@ -31,18 +53,19 @@ class Firewall(Resource):
         """`str` - The status of this firewall"""
         return self.__status
 
-    @lazy_property
-    def label(self):
-        """`str` - A color label assigned to this firewall"""
-        return self.__label
+    # @lazy_property
+    # def label(self):
+    #     """`str` - A color label assigned to this firewall"""
+    #     return self.__label
 
-    @label.setter
-    def label(self, l):
-        self.__label = l
+    # @label.setter
+    # def label(self, label):
+    #     """Set the label."""
+    #     self.__label = label
 
     @lazy_property
     def owning_account(self):
-        """`dict` - The enStratus account under which this firewall is registered"""
+        """`dict` - The DCM account under which this firewall is registered"""
         return self.__owning_account
 
     @lazy_property
@@ -51,31 +74,33 @@ class Firewall(Resource):
         return self.__name
 
     @name.setter
-    def name(self, n):
-        self.__name = n
+    def name(self, name):
+        """Set the name."""
+        self.__name = name
 
     @lazy_property
     def owning_user(self):
-        """`dict` or `None` - The enStratus owner of record for this firewall"""
+        """`dict` or `None` - The DCM owner of record for this firewall"""
         return self.__owning_user
 
     @lazy_property
     def owning_groups(self):
-        """`list` - The enStratus groups that have ownership of this firewall"""
+        """`list` - The DCM groups that have ownership of this firewall"""
         return self.__owning_groups
 
-    @lazy_property
-    def description(self):
-        """`str` - The description of this firewall in enStratus"""
-        return self.__description
+    # @lazy_property
+    # def description(self):
+    #     """`str` - The description of this firewall in DCM"""
+    #     return self.__description
 
-    @description.setter
-    def description(self, d):
-        self.__description = d
+    # @description.setter
+    # def description(self, desc):
+    #     """Set the description."""
+    #     self.__description = desc
 
     @lazy_property
     def cloud(self):
-        """`dict` - The enStratus cloud account in which this firewall lives"""
+        """`dict` - The DCM cloud account in which this firewall lives"""
         return self.__cloud
 
     @lazy_property
@@ -89,8 +114,9 @@ class Firewall(Resource):
         return self.__region
 
     @region.setter
-    def region(self, r):
-        self.__region = {'region_id': r}
+    def region(self, region):
+        """Set the region."""
+        self.__region = {'region_id': region}
 
     @lazy_property
     def removable(self):
@@ -99,16 +125,17 @@ class Firewall(Resource):
 
     @lazy_property
     def budget(self):
-        """`int` - The enStratus billing code costs are associated with"""
+        """`int` - The DCM billing code costs are associated with"""
         return self.__budget
 
     @budget.setter
-    def budget(self, b):
-        self.__budget = b
+    def budget(self, budget):
+        """Set the budget."""
+        self.__budget = budget
 
     @lazy_property
     def customer(self):
-        """`dict` - The enStratus customer to which this firewall belongs"""
+        """`dict` - The DCM customer to which this firewall belongs"""
         return self.__customer
 
     @property
@@ -120,7 +147,8 @@ class Firewall(Resource):
         try:
             return self.__rules
         except AttributeError:
-            rls = FirewallRule.all(self.__firewall_id, detail=self.request_details)
+            rls = FirewallRule.all(self.__firewall_id, 
+                                   detail=self.request_details)
             if len(rls) < 1:
                 self.__rules = []
             else:
@@ -133,7 +161,8 @@ class Firewall(Resource):
 
         :param label: Optional label to assign the firewall
         :type label: str.
-        :param callback: Optional callback to call with resulting :class:`Firewall`
+        :param callback: Optional callback to call with 
+            resulting :class:`Firewall`
         :type callback: func.
         :returns: :class:`Firewall`
         :raises: :class:`FirewallException`
@@ -158,12 +187,12 @@ class Firewall(Resource):
                 return self
             else:
                 if Job.wait_for(self.current_job) is True:
-                    j = Job(self.current_job)
-                    self.__firewall_id = j.message
+                    job = Job(self.current_job)
+                    self.__firewall_id = job.message
                     self.load()
                     return self
                 else:
-                    raise FirewallException(j.last_error)
+                    raise FirewallException(job.last_error)
         else:
             raise FirewallException(self.last_error)
 
@@ -188,8 +217,8 @@ class Firewall(Resource):
         """
 
         params = {}
-        r = Resource(cls.PATH)
-        r.request_details = 'none'
+        res = Resource(cls.PATH)
+        res.request_details = 'none'
 
         if 'detail' in kwargs:
             request_details = kwargs['detail']
@@ -207,20 +236,21 @@ class Firewall(Resource):
         if 'account_id' in kwargs:
             params['accountId'] = kwargs['account_id']
 
-        x = r.get(params=params)
-        if r.last_error is None:
-            keys = [i[camelize(cls.PRIMARY_KEY)] for i in x[cls.COLLECTION_NAME]]
+        firewall = res.get(params=params)
+        if res.last_error is None:
+            keys = [i[camelize(cls.PRIMARY_KEY)] \
+            for i in firewall[cls.COLLECTION_NAME]]
             if keys_only is True:
                 firewalls = keys
             else:
                 firewalls = []
                 for key in keys:
-                    fw = cls(key, detail=request_details)
-                    fw.load()
-                    firewalls.append(fw)
+                    fws = cls(key, detail=request_details)
+                    fws.load()
+                    firewalls.append(fws)
             return firewalls
         else:
-            raise FirewallException(r.last_error)
+            raise FirewallException(res.last_error)
 
 def describe_firewall(firewall_id, **kwargs):
     """Changes the basic meta-data for a firewall
@@ -238,15 +268,13 @@ def describe_firewall(firewall_id, **kwargs):
     """
 
     if kwargs:
-        f = Firewall(firewall_id)
-        f.label = kwargs.get('label', None)
-        f.description = kwargs.get('name', None)
-        f.label = kwargs.get('label', None)
-        return f.describe()
+        firewall = Firewall(firewall_id)
+        firewall.label = kwargs.get('label', None)
+        firewall.description = kwargs.get('name', None)
+        firewall.label = kwargs.get('label', None)
+        return firewall.describe()
     else:
         raise FirewallException("No attributes were specified to change")
-
-
 
 class FirewallException(BaseException):
     """Generic Firewall Exception"""

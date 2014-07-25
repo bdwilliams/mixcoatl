@@ -2,7 +2,7 @@
 mixcoatl.analytics.server_analytics
 -----------------------------------
 
-Implements access to the enStratus ServerAnalytics API
+Implements access to the DCM ServerAnalytics API
 
 .. note::
 
@@ -12,8 +12,8 @@ Implements access to the enStratus ServerAnalytics API
 """
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
-from mixcoatl.utils import camelize
 
+# pylint: disable-msg=R0902,R0904
 class ServerAnalytics(Resource):
     """Server analytics represent the performance of an individual server over
         a specified period of time
@@ -22,7 +22,8 @@ class ServerAnalytics(Resource):
     :type server_id: int.
     :param interval: The interval in minutes for the requested data points
     :type interval: int.
-    :param period_start: The start time in UNIX milliseconds for the first datapoint
+    :param period_start: The start time in UNIX milliseconds for the first 
+        datapoint
     :param period_start: int.
     :param period_end: The end time in UNIX milliseconds for the last datapoint
     :param period_end: int.
@@ -35,10 +36,14 @@ class ServerAnalytics(Resource):
     def __init__(self, server_id=None, **kwargs):
         Resource.__init__(self, kwargs)
         self.__server_id = server_id
+        self.__data_points = None
+        self.__period_start = None
+        self.__period_end = None
+        self.__interval_in_minutes = None
 
     @property
     def server_id(self):
-        """`int` The unique enStratus id for the server in the request"""
+        """`int` The unique DCM id for the server in the request"""
         return self.__server_id
 
     @lazy_property
@@ -60,8 +65,14 @@ class ServerAnalytics(Resource):
 
     @lazy_property
     def interval_in_minutes(self):
-        """`int` The interval between data points in minutes delivered in this response"""
+        """`int` The interval between data points in minutes delivered in 
+        this response"""
         return self.__interval_in_minutes
+
+    @interval_in_minutes.setter
+    def interval_in_minutes(self, iim):
+        """Sets the interval in minutes."""
+        self.__interval_in_minutes = iim
 
     @classmethod
     def all(cls, server_id, data_only=False, **kwargs):
@@ -73,9 +84,11 @@ class ServerAnalytics(Resource):
         :type data_only: bool.
         :param interval: The interval in minutes for the requested data points
         :type interval: int.
-        :param period_start: The start time in UNIX milliseconds for the first datapoint
+        :param period_start: The start time in UNIX milliseconds for the first 
+            datapoint
         :param period_start: int.
-        :param period_end: The end time in UNIX milliseconds for the last datapoint
+        :param period_end: The end time in UNIX milliseconds for the last 
+            datapoint
         :param period_end: int.
         :returns: :class:`ServerAnalytics` or `list` of :attr:`data_points`
         """
@@ -87,19 +100,21 @@ class ServerAnalytics(Resource):
             params['periodEnd'] = kwargs['period_end']
         if 'period_start' in kwargs:
             params['periodStart'] = kwargs['period_start']
-        s = cls(server_id)
+        svr = cls(server_id)
         if 'details' in kwargs:
-            s.request_details = kwargs['details']
+            svr.request_details = kwargs['details']
         else:
-            s.request_details = 'basic'
-        s.params = params
-        s.load()
-        if s.last_error is None:
+            svr.request_details = 'basic'
+        svr.params = params
+        svr.load()
+        if svr.last_error is None:
             if data_only is True:
-                return s.data_points
+                return svr.data_points
             else:
-                return s
+                return svr
         else:
-            raise ServerAnalyticsException(s.last_error)
+            raise ServerAnalyticsException(svr.last_error)
 
-class ServerAnalyticsException(BaseException): pass
+class ServerAnalyticsException(BaseException): 
+    """Server Analytics Exception"""
+    pass

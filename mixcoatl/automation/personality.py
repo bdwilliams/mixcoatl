@@ -1,30 +1,39 @@
+"""
+mixcoatl.automation.personality
+--------------------
+"""
 from mixcoatl.resource import Resource
-from mixcoatl.decorators.lazy import lazy_property
-from mixcoatl.decorators.validations import required_attrs
-from mixcoatl.utils import camelize
 
 class Personality(Resource):
+    """An Enstratius personality represents an ordered collection of scripts 
+    and/or personalities that are executed in an environment to bring a server
+    to fit a certain role."""
     PATH = 'automation/Personality'
     COLLECTION_NAME = 'personalities'
     PRIMARY_KEY = 'cmAccountId'
 
-    def __init__(self, cmAccountId = None, *args, **kwargs):
+    def __init__(self, cm_account_id = None):
         Resource.__init__(self)
-        self.__cmAccountId = cmAccountId 
+        self.__cm_account_id = cm_account_id 
 
     @property
-    def cmAccountId(self):
-        return self.__cmAccountId
+    def cm_account_id(self):
+        """The configuration management account in which this personality is 
+        stored."""
+        return self.__cm_account_id
 
     @classmethod
-    def all(cls, cmAccountId, **kwargs):
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
-        params = {'cmAccountId':cmAccountId}
-        c = r.get(params=params)
-        if r.last_error is None:
-        	return c[cls.COLLECTION_NAME]
+    def all(cls, cm_account_id):
+        """List all personalities."""
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
+        params = {'cmAccountId':cm_account_id}
+        pers = res.get(params=params)
+        if res.last_error is None:
+            return pers[cls.COLLECTION_NAME]
         else:
-        	raise PersonalityException(r.last_error)
+            raise PersonalityException(res.last_error)
 
-class PersonalityException(BaseException): pass
+class PersonalityException(BaseException): 
+    """Personality Exception"""
+    pass

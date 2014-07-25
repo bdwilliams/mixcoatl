@@ -1,28 +1,28 @@
 """Implements the ability to list CM environments via the API"""
 from mixcoatl.resource import Resource
-from mixcoatl.decorators.lazy import lazy_property
-from mixcoatl.decorators.validations import required_attrs
-from mixcoatl.utils import camelize, camel_keys
-from mixcoatl.admin.job import Job
 
 class Environment(Resource):
+    """An DCM environment represents a Chef environment and is managed in a 
+    configuration management account. """
     PATH = 'automation/Environment'
     COLLECTION_NAME = 'environments'
-    PRIMARY_KEY = 'environmentId'
+    PRIMARY_KEY = 'environment_id'
 
-    def __init__(self, environmentId=None, *args, **kwargs):
+    def __init__(self):
         Resource.__init__(self)
-        self.__environmentId = environmentId
 
     @classmethod
-    def all(cls, cmAccountId, **kwargs):
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
-        params = {'cmAccountId':cmAccountId}
-        x = r.get(params=params)
-        if r.last_error is None:
-        	return x[cls.COLLECTION_NAME]
+    def all(cls, cm_account_id):
+        """List CM environments."""
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
+        params = {'cmAccountId':cm_account_id}
+        cme = res.get(params=params)
+        if res.last_error is None:
+            return cme[cls.COLLECTION_NAME]
         else:
-        	return r.last_error
+            return res.last_error
 
-class EnvironmentException(BaseException): pass
+class EnvironmentException(BaseException): 
+    """Environment Exception"""
+    pass

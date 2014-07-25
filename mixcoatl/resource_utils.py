@@ -1,3 +1,7 @@
+"""
+mixcoatl.resource_utils
+------------------
+"""
 from mixcoatl.admin.billing_code import BillingCode
 from mixcoatl.geography.region import Region
 from mixcoatl.admin.group import Group
@@ -20,27 +24,41 @@ def get_servers(servers, **kwargs):
     """
     filtered_servers = servers
 
-    if kwargs.has_key('account_user_id') and kwargs['account_user_id'] is not None:
-        filtered_servers = [server for server in servers if hasattr(server, 'owning_user') and
+    if kwargs.has_key('account_user_id') and \
+    kwargs['account_user_id'] is not None:
+        filtered_servers = [server for server in servers \
+        if hasattr(server, 'owning_user') and
                             server.owning_user.has_key('account_user_id') and
-                            server.owning_user['account_user_id'] == kwargs['account_user_id']]
-    if kwargs.has_key('vm_login_id') and kwargs['vm_login_id'] is not None:
-        if filtered_servers is not None: servers = filtered_servers
-        filtered_servers = [server for server in servers if hasattr(server, 'owning_user') and
+                            server.owning_user['account_user_id'] == \
+                            kwargs['account_user_id']]
+    if kwargs.has_key('vm_login_id') and \
+    kwargs['vm_login_id'] is not None:
+        if filtered_servers is not None: 
+            servers = filtered_servers
+        filtered_servers = [server for server in servers \
+        if hasattr(server, 'owning_user') and
                             server.owning_user.has_key('vm_login_id') and
-                            server.owning_user['vm_login_id'] == kwargs['vm_login_id']]
+                            server.owning_user['vm_login_id'] == \
+                            kwargs['vm_login_id']]
     if kwargs.has_key('email') and kwargs['email'] is not None:
-        if filtered_servers is not None: servers = filtered_servers
-        filtered_servers = [server for server in servers if hasattr(server, 'owning_user') and
+        if filtered_servers is not None: 
+            servers = filtered_servers
+        filtered_servers = [server for server in servers \
+        if hasattr(server, 'owning_user') and
                             server.owning_user.has_key('email') and
                             server.owning_user['email'] == kwargs['email']]
     if kwargs.has_key('group_id') and kwargs['group_id'] is not None:
-        if filtered_servers is not None: servers = filtered_servers
-        filtered_servers = [server for server in servers if hasattr(server, 'owning_groups')
-                            for group in server.owning_groups if group['group_id'] == int(kwargs['group_id'])]
+        if filtered_servers is not None: 
+            servers = filtered_servers
+        filtered_servers = [server for server in servers \
+        if hasattr(server, 'owning_groups')
+                            for group in server.owning_groups \
+                            if group['group_id'] == int(kwargs['group_id'])]
     if kwargs.has_key('budget_id') and kwargs['budget_id'] is not None:
-        if filtered_servers is not None: servers = filtered_servers
-        filtered_servers = [server for server in servers if hasattr(server, 'budget') and
+        if filtered_servers is not None: 
+            servers = filtered_servers
+        filtered_servers = [server for server in servers \
+        if hasattr(server, 'budget') and
                             server.budget == int(kwargs['budget_id'])]
 
     return filtered_servers
@@ -60,11 +78,15 @@ def get_snapshots(snapshots, **kwargs):
     filtered_snapshots = snapshots
 
     if kwargs.has_key('group_id') and kwargs['group_id'] is not None:
-        filtered_snapshots = [snapshot for snapshot in snapshots if hasattr(snapshot, 'owning_groups')
-                              for g in snapshot.owning_groups if g['group_id'] == int(kwargs['group_id'])]
+        filtered_snapshots = [snapshot for snapshot in snapshots 
+        if hasattr(snapshot, 'owning_groups')
+                              for g in snapshot.owning_groups 
+                              if g['group_id'] == int(kwargs['group_id'])]
     if kwargs.has_key('budget_id') and kwargs['budget_id'] is not None:
-        if filtered_snapshots is not None: snapshots = filtered_snapshots
-        filtered_snapshots = [snapshot for snapshot in snapshots if hasattr(snapshot, 'budget') and
+        if filtered_snapshots is not None: 
+            snapshots = filtered_snapshots
+        filtered_snapshots = [snapshot for snapshot in snapshots 
+        if hasattr(snapshot, 'budget') and
                               snapshot.budget == int(kwargs['budget_id'])]
 
     return filtered_snapshots
@@ -87,25 +109,36 @@ def get_volumes(volumes, **kwargs):
     filtered_volumes = volumes
 
     if kwargs.has_key('vm_login_id') and kwargs['vm_login_id'] is not None:
-        filtered_volumes = [volume for volume in volumes if hasattr(volume, 'owning_user') and
+        filtered_volumes = [volume for volume in volumes \
+        if hasattr(volume, 'owning_user') and
                             volume.owning_user.has_key('vm_login_id') and
-                            volume.owning_user['vm_login_id'] == kwargs['vm_login_id']]
+                            volume.owning_user['vm_login_id'] \
+                            == kwargs['vm_login_id']]
     if kwargs.has_key('email') and kwargs['email'] is not None:
-        if filtered_volumes is not None: volumes = filtered_volumes
-        filtered_volumes = [volume for volume in volumes if hasattr(volume, 'owning_user') and
+        if filtered_volumes is not None: 
+            volumes = filtered_volumes
+        filtered_volumes = [volume for volume in volumes \
+        if hasattr(volume, 'owning_user') and
                             volume.owning_user.has_key('email') and
                             volume.owning_user['email'] == kwargs['email']]
     if kwargs.has_key('group_id') and kwargs['group_id'] is not None:
-        if filtered_volumes is not None: volumes = filtered_volumes
-        filtered_volumes = [volume for volume in volumes if hasattr(volume, 'owning_groups')
-                            for group in volume.owning_groups if group['group_id'] == int(kwargs['group_id'])]
+        if filtered_volumes is not None: 
+            volumes = filtered_volumes
+        filtered_volumes = [volume for volume in volumes \
+        if hasattr(volume, 'owning_groups')
+                            for group in volume.owning_groups \
+                            if group['group_id'] == int(kwargs['group_id'])]
     if kwargs.has_key('budget_id') and kwargs['budget_id'] is not None:
-        if filtered_volumes is not None: volumes = filtered_volumes
-        filtered_volumes = [volume for volume in volumes if hasattr(volume, 'budget') and
+        if filtered_volumes is not None: 
+            volumes = filtered_volumes
+        filtered_volumes = [volume for volume in volumes \
+        if hasattr(volume, 'budget') and
                             volume.budget == int(kwargs['budget_id'])]
     if kwargs.has_key('size') and kwargs['size'] is not None:
-        if filtered_volumes is not None: volumes = filtered_volumes
-        filtered_volumes = [volume for volume in volumes if volume.size_in_gb >= int(kwargs['size'])]
+        if filtered_volumes is not None: 
+            volumes = filtered_volumes
+        filtered_volumes = [volume for volume in volumes \
+        if volume.size_in_gb >= int(kwargs['size'])]
 
     return filtered_volumes
 
@@ -125,7 +158,8 @@ def get_user(users, **kwargs):
 
     if kwargs.has_key('vm_login_id') and kwargs['vm_login_id'] is not None:
         for user in users:
-            if hasattr(user, 'vm_login_id') and user.vm_login_id == kwargs['vm_login_id']:
+            if hasattr(user, 'vm_login_id') and \
+            user.vm_login_id == kwargs['vm_login_id']:
                 selected_user = user
     elif kwargs.has_key('email') and kwargs['email'] is not None:
         for user in users:

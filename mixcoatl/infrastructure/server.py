@@ -1,11 +1,16 @@
+"""
+mixcoatl.infrastructure.server
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.admin.job import Job
 from mixcoatl.utils import camel_keys
 from mixcoatl.decorators.validations import required_attrs
 from mixcoatl.decorators.lazy import lazy_property
 
-import json, sys, time
+import json, time
 
+# pylint: disable-msg=R0902,R0904,R0912
 class Server(Resource):
     """A server is a virtual machine running within a data center."""
 
@@ -13,9 +18,44 @@ class Server(Resource):
     COLLECTION_NAME = 'servers'
     PRIMARY_KEY = 'server_id'
 
-    def __init__(self, server_id=None, *args, **kwargs):
+    def __init__(self, server_id=None):
         Resource.__init__(self)
         self.__server_id = server_id
+        self.__agent_version = None
+        self.__customer = None
+        self.__cm_account = None
+        self.__cloud = None
+        self.__owning_groups = None
+        self.__owning_user = None
+        self.__platform = None
+        self.__personalities = None
+        self.__private_ip_addresses = None
+        self.__public_ip_address = None
+        self.__region = None
+        self.__provider_id = None
+        self.__public_ip_addresses = None
+        self.__product = None
+        self.__start_date = None
+        self.__stop_date = None
+        self.__status = None
+        self.__scripts = None
+        self.__run_list = None
+        self.__architecture = None
+        self.__pause_after = None
+        self.__machine_image = None
+        self.__p_scripts = None
+        self.__vlan = None
+        self.__name = None
+        self.__label = None
+        self.__description = None
+        self.__cm_scripts = None
+        self.__data_center = None
+        self.__environment = None
+        self.__provider_product_id = None
+        self.__firewalls = None
+        self.__keypair = None
+        self.__budget = None
+        self.__terminate_after = None
 
     @property
     def server_id(self):
@@ -38,8 +78,9 @@ class Server(Resource):
         return self.__label
 
     @label.setter
-    def label(self, l):
-        self.__label = l
+    def label(self, label):
+        """Set the label"""
+        self.__label = label
 
     @lazy_property
     def customer(self):
@@ -47,69 +88,80 @@ class Server(Resource):
         return self.__customer
 
     @lazy_property
-    def cm_account(self):
-        """`dict` - The configuration management account for the server."""
-        return self.__cm_account
-
-    @lazy_property
     def data_center(self):
         """`dict` - The specific datacenter where the instance is located."""
         return self.__data_center
 
     @data_center.setter
-    def data_center(self, d):
-        self.__data_center = {u'data_center_id': d}
+    def data_center(self, data):
+        """Set the data center."""
+        self.__data_center = {u'data_center_id': data}
 
     @lazy_property
-    def cmAccount(self):
-        return self.__cmAccount
+    def cm_account(self):
+        """The configuration management account associated with the 
+        environment, parameters, and runList you want to be applied to the 
+        server post-launch."""
+        return self.__cm_account
 
     @lazy_property
     def environment(self):
+        """The configuration management account associated with the 
+        environment, parameters, and runList you want to be applied to the 
+        server post-launch."""
         return self.__environment
 
     @environment.setter
-    def environment(self, c):
-        self.__environment = {u'sharedEnvironmentCode': c}
+    def environment(self, environment):
+        """Set the environment."""
+        self.__environment = {u'sharedEnvironmentCode': environment}
 
-    @cmAccount.setter
-    def cm_account_id(self, c):
-        self.__cmAccount = {u'cmAccountId': c}
+    @cm_account.setter
+    def cm_account_id(self, cai):
+        """Set the CM account id."""
+        self.__cm_account = {u'cmAccountId': cai}
 
     @lazy_property
     def cm_scripts(self):
+        """Scripts during server launch."""
         return self.__cm_scripts
 
     @cm_scripts.setter
-    def cm_scripts(self, c):
-    	s = c.split(",")
-    	sc = []
-    	for cm in s:
-    		sc.append({u'sharedScriptCode': cm})
+    def cm_scripts(self, css):
+        """Set CM scripts."""
+        script = css.split(",")
+        scs = []
+        for cms in script:
+            scs.append({u'sharedScriptCode': cms})
 
-        self.__cm_scripts = sc
+        self.__cm_scripts = scs
 
     @lazy_property
     def p_scripts(self):
+        """Scripts associated with launch."""
         return self.__p_scripts
 
     @p_scripts.setter
-    def p_scripts(self, c):
-    	s = c.split(",")
-    	p = []
-    	for cm in s:
-    		p.append({'sharedPersonalityCode': cm})
+    def p_scripts(self, scripts):
+        """Set the scripts"""
+        script = scripts.split(",")
+        pscm = []
+        for cms in script:
+            pscm.append({'sharedPersonalityCode': cms})
 
-        self.__p_scripts = p
+        self.__p_scripts = pscm
 
     @lazy_property
     def description(self):
         """The description of the server"""
+        # pylint: disable-msg=E0202,R0801
         return self.__description
 
     @description.setter
-    def description(self, d):
-        self.__description = d
+    def description(self, desc):
+        """Set the description."""
+        # pylint: disable-msg=E0202,R0801
+        self.__description = desc
 
     @lazy_property
     def machine_image(self):
@@ -117,8 +169,10 @@ class Server(Resource):
         return self.__machine_image
 
     @machine_image.setter
-    def machine_image(self, m):
-        self.__machine_image = {u'machine_image_id': m}
+    def machine_image(self, mis):
+        """Identifies the machine from which this server was built. Some clouds
+        may allow this value to be empty."""
+        self.__machine_image = {u'machine_image_id': mis}
 
     @lazy_property
     def vlan(self):
@@ -126,8 +180,9 @@ class Server(Resource):
         return self.__vlan
 
     @vlan.setter
-    def vlan(self, v):
-        self.__vlan = {u'vlan_id': v}
+    def vlan(self, vlan):
+        """Set the VLAN."""
+        self.__vlan = {u'vlan_id': vlan}
 
     @lazy_property
     def firewalls(self):
@@ -135,8 +190,9 @@ class Server(Resource):
         return self.__firewalls
 
     @firewalls.setter
-    def firewalls(self, f):
-        self.__firewalls = f
+    def firewalls(self, firewall):
+        """Set the firewall."""
+        self.__firewalls = firewall
 
     @lazy_property
     def name(self):
@@ -144,12 +200,13 @@ class Server(Resource):
         return self.__name
 
     @name.setter
-    def name(self, n):
-        self.__name = n
+    def name(self, name):
+        """Set the server name."""
+        self.__name = name
 
     @lazy_property
     def owning_groups(self):
-        """`list` - The enStratus groups owning the server."""
+        """`list` - The DCM groups owning the server."""
         return self.__owning_groups
 
     @lazy_property
@@ -170,7 +227,6 @@ class Server(Resource):
     @lazy_property
     def private_ip_addresses(self):
         """`list` - The private ip addresses assigned to the server."""
-
         return self.__private_ip_addresses
 
     @lazy_property
@@ -190,16 +246,19 @@ class Server(Resource):
 
     @lazy_property
     def provider_product_id(self):
-        """`str` - The provider's product identifier for the server *(i.e. `m1.large`)*"""
+        """`str` - The provider's product identifier for the server 
+        *(i.e. `m1.large`)*"""
         return self.__provider_product_id
 
     @provider_product_id.setter
-    def provider_product_id(self, id):
-        self.__provider_product_id = id
+    def provider_product_id(self, ids):
+        """Sets provider product id"""
+        self.__provider_product_id = ids
 
     @lazy_property
     def provider_id(self):
-        """`str` - The provider's identifier for the server *(i.e. `i-abcdefg`)*"""
+        """`str` - The provider's identifier for the server 
+        *(i.e. `i-abcdefg`)*"""
         return self.__provider_id
 
     @lazy_property
@@ -228,18 +287,20 @@ class Server(Resource):
         return self.__budget
 
     @budget.setter
-    def budget(self, b):
+    def budget(self, budget):
         """`int` - The budget code to apply to the server."""
-        self.__budget = b
+        self.__budget = budget
 
     @lazy_property
     def scripts(self):
-        """`list` - The list of configuration management scripts of the server.(Chef?)"""
+        """`list` - The list of configuration management scripts of 
+        the server.(Chef?)"""
         return self.__scripts
 
     @lazy_property
     def run_list(self):
-        """`list` - The list of configuration management scripts of the server.(Puppet?)"""
+        """`list` - The list of configuration management scripts of 
+        the server.(Puppet?)"""
         return self.__run_list
 
     @lazy_property
@@ -253,15 +314,15 @@ class Server(Resource):
         return self.__terminate_after
 
     @terminate_after.setter
-    def terminate_after(self, t):
-	    self.__terminate_after = t
+    def terminate_after(self, terms):
+        """If present, this server will automatically terminate at the 
+        specified timestamp."""
+        self.__terminate_after = terms
 
     @lazy_property
     def pause_after(self):
         """`str` - The time the server automatically pauses."""
         return self.__pause_after
-
-
 
     @property
     def keypair(self):
@@ -274,8 +335,9 @@ class Server(Resource):
         return self.__keypair
 
     @keypair.setter
-    def keypair(self, kp):
-        self.__keypair = kp
+    def keypair(self, kps):
+        """Set keypair."""
+        self.__keypair = kps
 
     def reload(self):
         """Reload resource data from API calls"""
@@ -299,9 +361,9 @@ class Server(Resource):
         :type reason: str.
         :returns: bool -- Result of API call
         """
-        p = self.PATH+"/"+str(self.server_id)
+        path = self.PATH+"/"+str(self.server_id)
         qopts = {'reason':reason}
-        return self.delete(p, params=qopts)
+        return self.delete(path, params=qopts)
 
     @required_attrs(['server_id'])
     def pause(self, reason=None):
@@ -311,19 +373,20 @@ class Server(Resource):
         :type reason: str.
         :returns: Job -- Result of API call
         """
-        p = '%s/%s' % (self.PATH, str(self.server_id))
+        path = '%s/%s' % (self.PATH, str(self.server_id))
         payload = {'pause':[{}]}
 
         if reason is not None:
             payload['pause'][0].update({'reason':reason})
 
-        return self.put(p, data=json.dumps(payload))
+        return self.put(path, data=json.dumps(payload))
 
     @required_attrs(['server_id'])
     def extend_terminate(self, extend):
-        p = '%s/%s' % (self.PATH, str(self.server_id))
+        """Extend server terminateAfter."""
+        path = '%s/%s' % (self.PATH, str(self.server_id))
         qopts = {'terminateAfter':extend}
-        return self.delete(p, params=qopts)
+        return self.delete(path, params=qopts)
 
     @required_attrs(['server_id'])
     def start(self, reason=None):
@@ -333,13 +396,13 @@ class Server(Resource):
         :type reason: str.
         :returns: Job -- Result of API call
         """
-        p = '%s/%s' % (self.PATH, str(self.server_id))
+        path = '%s/%s' % (self.PATH, str(self.server_id))
         payload = {'start':[{}]}
 
         if reason is not None:
             payload['start'][0].update({'reason':reason})
 
-        return self.put(p, data=json.dumps(payload))
+        return self.put(path, data=json.dumps(payload))
 
     @required_attrs(['server_id'])
     def stop(self, reason=None):
@@ -349,17 +412,14 @@ class Server(Resource):
         :type reason: str.
         :returns: Job -- Result of API call
         """
-        p = '%s/%s' % (self.PATH, str(self.server_id))
+        path = '%s/%s' % (self.PATH, str(self.server_id))
         payload = {'stop':[{}]}
 
         if reason is not None:
             payload['stop'][0].update({'reason':reason})
 
-        return self.put(p, data=json.dumps(payload))
+        return self.put(path, data=json.dumps(payload))
 
-    # TODO: Refactor this a bit. We should be raising exceptions instead of
-    # this madness of returning the last error. Makes no sense. I should have
-    # never done it.
     @required_attrs(['provider_product_id', 'machine_image', 'description',
                     'name', 'data_center', 'budget'])
     def launch(self, callback=None):
@@ -378,11 +438,15 @@ class Server(Resource):
         :param callback: Optional callback to send the results of the API call
         :type callback: func.
         :returns: int -- The job id of the launch request
-        :raises: :class:`ServerLaunchException`, :class:`mixcoatl.decorators.validations.ValidationException`
+        :raises: :class:`ServerLaunchException`
+            , :class:`mixcoatl.decorators.validations.ValidationException`
         """
-        optional_attrs = ['vlan', 'firewalls', 'keypair', 'label', 'cmAccount', 'environment', 'cm_scripts', 'p_scripts', 'volumeConfiguration']
+        optional_attrs = ['vlan', 'firewalls', 'keypair', 'label', 
+        'cm_account', 'environment', 'cm_scripts', 'p_scripts', 
+        'volumeConfiguration']
         if self.server_id is not None:
-            raise ServerLaunchException('Cannot launch an already running server: %s' % self.server_id)
+            raise ServerLaunchException('Cannot launch an already \
+                                        running server: %s' % self.server_id)
 
         payload = {'launch':
                     [{
@@ -394,19 +458,25 @@ class Server(Resource):
                         'dataCenter': camel_keys(self.data_center)
                     }]}
 
-        for oa in optional_attrs:
+        for oas in optional_attrs:
             try:
-                if getattr(self, oa) is not None:
-                    if oa == 'cm_scripts':
-                        payload['launch'][0].update({'scripts':getattr(self, oa)})
-                    elif oa == 'p_scripts':
-                        payload['launch'][0].update({'personalities':getattr(self, oa)})
-                    elif oa == 'volumeConfiguration':
-                        payload['launch'][0].update({'volumeConfiguration':{u'raidlevel':'RAID0', u'volumeCount':1, u'volumeSize':2, u'fileSystem':'ext3', u'mountPoint':'/mnt/data'}})
-                    elif oa == 'vlan':
-                        payload['launch'][0].update({'vlan':camel_keys(getattr(self, oa))})
+                if getattr(self, oas) is not None:
+                    if oas == 'cm_scripts':
+                        payload['launch'][0].update({'scripts':\
+                                                    getattr(self, oas)})
+                    elif oas == 'p_scripts':
+                        payload['launch'][0].update({'personalities':\
+                                                    getattr(self, oas)})
+                    elif oas == 'volumeConfiguration':
+                        payload['launch'][0]\
+                        .update({'volumeConfiguration':{u'raidlevel':'RAID0',\
+                         u'volumeCount':1, u'volumeSize':2,\
+                         u'fileSystem':'ext3', u'mountPoint':'/mnt/data'}})
+                    elif oas == 'vlan':
+                        payload['launch'][0]\
+                        .update({'vlan':camel_keys(getattr(self, oas))})
                     else:
-                        payload['launch'][0].update({oa:getattr(self, oa)})
+                        payload['launch'][0].update({oas:getattr(self, oas)})
             except AttributeError:
                 pass
 
@@ -420,14 +490,18 @@ class Server(Resource):
             raise ServerLaunchException(self.last_error)
 
     def duplicate(self, server):
+        """Check for duplicate."""
         pass
 
     def wait_for(self, status='RUNNING', callback = None):
-        """Blocks execution until the current server has status of :attr:`status`
+        """Blocks execution until the current server has 
+        status of :attr:`status`
 
-        :param status: The status to expect before continuing *(i.e. `RUNNING` or `PAUSED`)*
+        :param status: The status to expect before continuing 
+            *(i.e. `RUNNING` or `PAUSED`)*
         :type status: str.
-        :param callback: Optional callback to be called with the final :class:`Server`` when ``status`` is reached
+        :param callback: Optional callback to be called with the 
+            final :class:`Server`` when ``status`` is reached
         :type callback: func.
         :raises: `ServerException`
         """
@@ -459,19 +533,25 @@ class Server(Resource):
         :returns: list -- a list of :class:`Server`
         :raises: ServerException
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
 
         if 'params' in kwargs:
-          params = kwargs['params']
+            params = kwargs['params']
         else:
-          params = []
-        s = r.get(params=params)
-        if r.last_error is None:
-            servers = [cls(server['serverId']) for server in s[cls.COLLECTION_NAME]]
+            params = []
+        get_data = res.get(params=params)
+        if res.last_error is None:
+            servers = [cls(server['serverId']) \
+            for server in get_data[cls.COLLECTION_NAME]]
             return servers
         else:
-            raise ServerException(r.last_error)
+            raise ServerException(res.last_error)
 
-class ServerException(BaseException): pass
-class ServerLaunchException(ServerException): pass
+class ServerException(BaseException): 
+    """Server Exception"""
+    pass
+
+class ServerLaunchException(ServerException): 
+    """Server Launch Exception"""
+    pass

@@ -1,7 +1,11 @@
-"""Implements the enStratus DataCenter API"""
+"""
+mixcoatl.geograpy.datacenter
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 
+# pylint: disable-msg=R0902,R0904
 class DataCenter(Resource):
     """
     A data center is a part of a regional infrastructure that has some ability
@@ -11,9 +15,14 @@ class DataCenter(Resource):
     COLLECTION_NAME = 'dataCenters'
     PRIMARY_KEY = 'data_center_id'
 
-    def __init__(self, data_center_id = None, *args, **kwargs):
+    def __init__(self, data_center_id = None, **kwargs):
         Resource.__init__(self)
         self.__data_center_id = data_center_id
+        self.__description = None
+        self.__name = None
+        self.__provider_id = None
+        self.__region = None
+        self.__status = None
 
     @property
     def data_center_id(self):
@@ -51,7 +60,8 @@ class DataCenter(Resource):
 
         :param region_id: Required. The region to query against
         :type region_id: int.
-        :param keys_only: Return :attr:`data_center_id` instead of :class:`DataCenter`
+        :param keys_only: Return :attr:`data_center_id` 
+            instead of :class:`DataCenter`
         :type keys_only: bool.
         :param detail: The level of detail to return - `basic` or `extended`
         :type detail: str.
@@ -63,23 +73,26 @@ class DataCenter(Resource):
         else:
             keys_only = False
 
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
         params = {'regionId':region_id}
-        c = r.get(params=params)
-        if r.last_error is None:
+        get_data = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                dcs = [i['dataCenterId'] for i in c[cls.COLLECTION_NAME]]
+                dcs = [i['dataCenterId'] \
+                for i in get_data[cls.COLLECTION_NAME]]
             else:
                 dcs = []
-                for i in c[cls.COLLECTION_NAME]:
-                    dc = cls(i['dataCenterId'])
+                for i in get_data[cls.COLLECTION_NAME]:
+                    dci = cls(i['dataCenterId'])
                     if 'detail' in kwargs:
-                        dc.request_details = kwargs['detail']
-                    dc.load()
-                    dcs.append(dc)
+                        dci.request_details = kwargs['detail']
+                    dci.load()
+                    dcs.append(dci)
             return dcs
         else:
-            raise DataCenterException(r.last_error)
+            raise DataCenterException(res.last_error)
 
-class DataCenterException(BaseException): pass
+class DataCenterException(BaseException): 
+    """DataCenter Exception"""
+    pass

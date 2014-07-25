@@ -9,28 +9,29 @@ def uncamel(val):
     'data_center_name'
     """
     import re
-    s = lambda val: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', '_\\1', val).lower().strip('_')
-    return s(val)
+    snk = lambda val: re.sub('(((?<=[a-z])[A-Z])|([A-Z](?![A-Z]|$)))', '_\\1', 
+                           val).lower().strip('_')
+    return snk(val)
 
-def uncamel_keys(d1):
+def uncamel_keys(dict1):
     """Return :attr:`d1` with all keys converted to snake case
 
     >>> d = {'myThings':[{'thingId':1,'someThings':{'firstThing':'a_thing'}}]}
     >>> uncamel_keys(d)
     {'my_things': [{'thing_id': 1, 'some_things': {'first_thing': 'a_thing'}}]}
     """
-    d2 = dict()
-    if not isinstance(d1, dict):
-        return d1
-    for k, v in d1.iteritems():
+    dict2 = dict()
+    if not isinstance(dict1, dict):
+        return dict1
+    for k, val in dict1.iteritems():
         new_key = uncamel(k)
-        if isinstance(v, dict):
-            d2[new_key] = uncamel_keys(v)
-        elif isinstance(v, list):
-            d2[new_key] = [uncamel_keys(item) for item in v]
+        if isinstance(val, dict):
+            dict2[new_key] = uncamel_keys(val)
+        elif isinstance(val, list):
+            dict2[new_key] = [uncamel_keys(item) for item in val]
         else:
-            d2[new_key] = v
-    return d2
+            dict2[new_key] = val
+    return dict2
 
 def camelize(val):
     """Return the camel case version of a :attr:`str`
@@ -38,28 +39,29 @@ def camelize(val):
     >>> camelize('this_is_a_thing')
     'thisIsAThing'
     """
-    s = ''.join([t.title() for t in val.split('_')])
-    return s[0].lower()+s[1:]
+    string = ''.join([t.title() for t in val.split('_')])
+    return string[0].lower()+string[1:]
 
-def camel_keys(d1):
+def camel_keys(dict1):
     """Return :attr:`d1` with all keys converted to camel case
 
-    >>> b = {'my_things': [{'thing_id': 1, 'some_things': {'first_thing': 'a_thing'}}]}
+    >>> b = {'my_things': [{'thing_id': 1, 'some_things': 
+                                            {'first_thing': 'a_thing'}}]}
     >>> camel_keys(b)
     {'myThings': [{'thingId': 1, 'someThings': {'firstThing': 'a_thing'}}]}
     """
-    d2 = dict()
-    if not isinstance(d1, dict):
-        return d1
-    for k, v in d1.iteritems():
+    dict2 = dict()
+    if not isinstance(dict1, dict):
+        return dict1
+    for k, val in dict1.iteritems():
         new_key = camelize(k)
-        if isinstance(v, dict):
-            d2[new_key] = camel_keys(v)
-        elif isinstance(v, list):
-            d2[new_key] = [camel_keys(item) for item in v]
+        if isinstance(val, dict):
+            dict2[new_key] = camel_keys(val)
+        elif isinstance(val, list):
+            dict2[new_key] = [camel_keys(item) for item in val]
         else:
-            d2[new_key] = v
-    return d2
+            dict2[new_key] = val
+    return dict2
 
 def convert(val):
     """Return :attr:`input` converted from :class:`unicode` to :class:`str`
@@ -72,7 +74,8 @@ def convert(val):
     {'foo': 'bar'}
     """
     if isinstance(val, dict):
-        return dict((convert(key), convert(value)) for key, value in val.iteritems())
+        return dict((convert(key), convert(value)) for key, value \
+                    in val.iteritems())
     elif isinstance(val, list):
         return [convert(element) for element in val]
     elif isinstance(val, unicode):

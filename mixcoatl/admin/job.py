@@ -2,7 +2,7 @@
 mixcoatl.admin.job
 ------------------
 
-Implements access to the enStratus Job API
+Implements access to the DCM Job API
 """
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
@@ -10,7 +10,12 @@ from mixcoatl.utils import camelize
 
 import time
 
+# pylint: disable-msg=R0902,R0904
 class Job(Resource):
+    """A job is an asynchronous process resulting from a client request that 
+    resulted in a 202 ACCEPTED response. If the client cares about the ultimate 
+    result of the original request, it can query for the job returned in the 
+    initial response until the job completes."""
     PATH = 'admin/Job'
     COLLECTION_NAME = 'jobs'
     PRIMARY_KEY = 'job_id'
@@ -18,10 +23,15 @@ class Job(Resource):
     def __init__(self, job_id = None, **kwargs):
         Resource.__init__(self)
         self.__job_id = job_id
+        self.__status = None
+        self.__description = None
+        self.__message = None
+        self.__start_date = None
+        self.__end_date = None
 
     @property
     def job_id(self):
-        """`int` The unique enStratus id for this job"""
+        """`int` The unique DCM id for this job"""
         return self.__job_id
 
     @lazy_property
@@ -36,7 +46,7 @@ class Job(Resource):
 
     @lazy_property
     def message(self):
-        """`str` A message describing the current disposition of the operation"""
+        """`str` A message describing the current operation disposition"""
         return self.__message
 
     @lazy_property
@@ -61,15 +71,17 @@ class Job(Resource):
         :returns: `list` of :class:`Job` or :attr:`job_id`
         :raises: :class:`JobException`
         """
-        r = Resource(cls.PATH)
-        x = r.get()
-        if r.last_error is None:
+        res = Resource(cls.PATH)
+        jobs = res.get()
+        if res.last_error is None:
             if keys_only is True:
-                return [i[camelize(cls.PRIMARY_KEY)] for i in x[cls.COLLECTION_NAME]]
+                return [i[camelize(cls.PRIMARY_KEY)] \
+                for i in jobs[cls.COLLECTION_NAME]]
             else:
-                return [cls(i[camelize(cls.PRIMARY_KEY)]) for i in x[cls.COLLECTION_NAME]]
+                return [cls(i[camelize(cls.PRIMARY_KEY)]) \
+                for i in jobs[cls.COLLECTION_NAME]]
         else:
-            raise JobException(r.last_error)
+            raise JobException(res.last_error)
 
     @classmethod
     def wait_for(cls, job_id, status='COMPLETE', callback = None):
@@ -79,27 +91,29 @@ class Job(Resource):
         :type job_id: int.
         :param status: The status to expect before continuing
         :type status: str.
-        :param callback: Optional callback to be called with the final :class:`Job`
+        :param callback: Optional callback to be called with final :class:`Job`
             when :attr:`status` is reached
         :type callback: func.
         :returns: `bool` - Result of job exectution
         :raises: :class:`JobException`
         """
-        j = Job(job_id)
-        j.load()
-        if j.last_error is not None:
-            raise JobException(j.last_error)
+        job = Job(job_id)
+        job.load()
+        if job.last_error is not None:
+            raise JobException(job.last_error)
         else:
-            while j.status != status:
+            while job.status != status:
                 time.sleep(5)
-                j.load()
-                if j.status == 'ERROR':
+                job.load()
+                if job.status == 'ERROR':
                     break
                 else:
                     continue
         if callback is not None:
-            callback(j)
+            callback(job)
         else:
             return True
 
-class JobException(BaseException): pass
+class JobException(BaseException):
+    """Job Exception"""
+    pass

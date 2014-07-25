@@ -2,23 +2,37 @@
 mixcoatl.admin.account
 ----------------------
 
-Implements access to the enStratus Account API
+Implements access to the DCM Account API
 """
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.utils import camelize
 import json
 
+# pylint: disable-msg=R0904,R0902
 class Account(Resource):
-    """An account object represents an enStratus account held by an enStratus customer."""
+    """An account object represents an DCM account held by a DCM customer."""
 
     PATH = 'admin/Account'
     COLLECTION_NAME = 'accounts'
     PRIMARY_KEY = 'account_id'
 
-    def __init__(self, account_id = None, *args, **kwargs):
+    def __init__(self, account_id = None, **kwargs):
         Resource.__init__(self)
         self.__account_id = account_id
+        self.__alert_configuration = None
+        self.__billing_system_id = None
+        self.__cloud_subscription = None
+        self.__configured = None
+        self.__customer = None
+        self.__default_budget = None
+        self.__dns_automation = None
+        self.__name = None
+        self.__owner = None
+        self.__plan_id = None
+        self.__provisioned = None
+        self.__status = None
+        self.__subscribed = None
 
     @property
     def account_id(self):
@@ -32,7 +46,7 @@ class Account(Resource):
 
     @lazy_property
     def billing_system_id(self):
-        """`int` - The ID associated with this account that may appear on invoices."""
+        """`int` - The account ID that may appear on invoices."""
         return self.__billing_system_id
 
     @lazy_property
@@ -42,17 +56,17 @@ class Account(Resource):
 
     @lazy_property
     def configured(self):
-        """`bool` - Has this account has been tied to an account with a cloud provider"""
+        """`bool` - Is this account tied to an account with a cloud provider"""
         return self.__configured
 
     @lazy_property
     def customer(self):
-        """`dict` - The enStratus customer record to which this account belongs"""
+        """`dict` - The DCM customer record to which this account belongs"""
         return self.__customer
 
     @lazy_property
     def default_budget(self):
-        """The unique id of the billing code that is the default for discovered resources"""
+        """The unique billing code id for the discovered resources"""
         return self.__default_budget
 
     @lazy_property
@@ -87,7 +101,7 @@ class Account(Resource):
 
     @lazy_property
     def subscribed(self):
-        """`bool` - If the account is configured and the cloud account is working with enStratus"""
+        """`bool` - If the account is configured and working with DCM"""
         return self.__subscribed
 
 
@@ -111,28 +125,34 @@ class Account(Resource):
         :raises: :class:`AccountException`
         """
 
-        r = Resource(cls.PATH)
+        res = Resource(cls.PATH)
         if 'detail' in kwargs:
-            r.request_details = kwargs['detail']
+            res.request_details = kwargs['detail']
         else:
-            r.request_details = 'basic'
+            res.request_details = 'basic'
 
         if 'cloud_id' in kwargs:
             params = {'cloudId': kwargs['cloud_id']}
         else:
             params = {}
 
-        c = r.get(params=params)
-        if r.last_error is None:
+        acc = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                return [i[camelize(cls.PRIMARY_KEY)] for i in c[cls.COLLECTION_NAME]]
+                return [i[camelize(cls.PRIMARY_KEY)] for i \
+                in acc[cls.COLLECTION_NAME]]
             else:
-                return [cls(i[camelize(cls.PRIMARY_KEY)]) for i in c[cls.COLLECTION_NAME]]
+                return [cls(i[camelize(cls.PRIMARY_KEY)]) for i \
+                in acc[cls.COLLECTION_NAME]]
         else:
-            raise AccountException(r.last_error)
+            raise AccountException(res.last_error)
     
-    def assign_cloud(self, cloud_id, account_number, api_key_id, api_key_secret):
-        """ Associate this account with the cloud and supporting credentials specified.
+    def assign_cloud(self, 
+                     cloud_id, 
+                     account_number, 
+                     api_key_id, 
+                     api_key_secret):
+        """ Associate this account with the cloud and supporting credentials.
 
         :param cloud_id: Cloud ID of the cloud that will be associated.
         :type cloud_id: int.
@@ -146,7 +166,7 @@ class Account(Resource):
         :raises: :class:`AssignCloudException`
         """
 
-        p = "%s/%s" % (self.PATH, str(self.account_id))
+        path = "%s/%s" % (self.PATH, str(self.account_id))
         payload = {'assignCloud': {
                        'accounts': {
                            'cloudSubscription': {
@@ -154,12 +174,17 @@ class Account(Resource):
                                'accountNumber': account_number,
                                'apiKeyId': api_key_id,
                                'apiKeySecret': api_key_secret }}}}
-        self.put(p, data=json.dumps(payload))
+        self.put(path, data=json.dumps(payload))
         if self.last_error is None:
             self.load()
             return self.cloud_subscription['cloud_subscription_id']
         else:
             raise AssignCloudException(self.last_error)
 
-class AccountException(BaseException): pass
-class AssignCloudException(AccountException): pass
+class AccountException(BaseException):
+    """Account Exception"""
+    pass
+
+class AssignCloudException(AccountException):
+    """Assign Cloud Exception"""
+    pass

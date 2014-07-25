@@ -1,5 +1,12 @@
-class LazyPropertyException(BaseException): pass
+"""
+mixcoatl.decorators.lazy
+--------------------
+"""
+class LazyPropertyException(BaseException):
+    """Lazy Property Exception"""
+    pass
 
+# pylint: disable-msg=C0103,R0903
 class lazy_property(object):
     """decorator for marking an attribute as lazy loaded
 
@@ -26,9 +33,11 @@ class lazy_property(object):
         self._sfunc = None
 
     def __get__(self, instance, owner=None):
+        """Global get"""
         myname = self.__name__
 
-        if instance is None: return self
+        if instance is None: 
+            return self
 
         if self._func is None:
             raise AttributeError, "unknown attribute %s" % myname
@@ -53,6 +62,7 @@ class lazy_property(object):
         return self._func(instance)
 
     def __set__(self, instance, value):
+        """Global set"""
         if self._sfunc is None:
             raise TypeError, "immutable attribute: %s" % self.__name__
         else:
@@ -65,5 +75,6 @@ class lazy_property(object):
             self._sfunc(instance, value)
 
     def setter(self, sfunc):
+        """Global setter"""
         self._sfunc = sfunc
         return self

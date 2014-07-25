@@ -1,8 +1,14 @@
+"""
+mixcoatl.config
+--------------------
+"""
+
 import os, datetime
 
 from mixcoatl.exceptions import ConfigException
 
 def validate(date_text):
+    """Validates date format."""
     try:
         datetime.datetime.strptime(date_text, '%Y-%m-%d')
         return date_text
@@ -10,7 +16,8 @@ def validate(date_text):
         raise ValueError("Incorrect data format, should be YYYY-MM-DD")
 
 class Config(object):
-    # pylint: disable-msg=E0710
+    """Glogal config function."""
+    # pylint: disable-msg=E0710,R0902
     def __init__(self):
         self.access_key = None
         self.secret_key = None
@@ -21,7 +28,9 @@ class Config(object):
         self.default_api_version = '2012-06-15'
         self.ssl_verify = None
 
+    # pylint: disable-msg=R0912
     def configure(self):
+        """Runs initial configure."""
         if self.access_key is None:
             if 'ES_ACCESS_KEY' in os.environ:
                 self.set_access_key(os.environ['ES_ACCESS_KEY'])
@@ -37,14 +46,14 @@ class Config(object):
                 self.set_api_version(os.environ['ES_API_VERSION'])
             else:
                 if 'ES_ENDPOINT' in os.environ:
-                  str = os.environ['ES_ENDPOINT'].split('/')
+                    strs = os.environ['ES_ENDPOINT'].split('/')
 
-                  if validate(str[-1]):
-                    self.set_api_version(str[-1])
-                  else:
-                    self.set_api_version(self.default_api_version)
+                    if validate(strs[-1]):
+                        self.set_api_version(strs[-1])
+                    else:
+                        self.set_api_version(self.default_api_version)
                 else:
-                  self.set_api_version(self.default_api_version)
+                    self.set_api_version(self.default_api_version)
 
             self.set_basepath('/api/enstratus/%s' % self.api_version)
 
@@ -61,21 +70,27 @@ class Config(object):
                 self.set_ssl_verify('1')
 
     def set_access_key(self, key):
+        """Sets default access key."""
         self.access_key = key
 
     def set_secret_key(self, key):
+        """Sets default secret key."""
         self.secret_key = key
 
-    def set_endpoint(self, ep):
-        self.endpoint = ep
+    def set_endpoint(self, end):
+        """Sets default endpoint."""
+        self.endpoint = end
 
     def set_api_version(self, version):
+        """Sets default API version."""
         self.api_version = version
 
     def set_basepath(self, basepath):
+        """Sets default base path."""
         self.basepath = basepath
 
     def set_ssl_verify(self, verify):
+        """Sets whether to SSL verify."""
         if verify == '0':
             self.ssl_verify = False
         else:

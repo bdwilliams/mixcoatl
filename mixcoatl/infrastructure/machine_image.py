@@ -1,23 +1,47 @@
+"""
+mixcoatl.infrastructure.machine_image
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.validations import required_attrs
 from mixcoatl.decorators.lazy import lazy_property
 
 import json
 
-# TODO: certain images cause weird redirect
-# m = MachineImage(284555) redirect loop
-# m = MachineImage(284831) no loop
+# pylint: disable-msg=R0902,R0904
 class MachineImage(Resource):
+    """A machine image is the baseline image or template from which virtual 
+    machines may be provisioned. """
     PATH = 'infrastructure/MachineImage'
     COLLECTION_NAME = 'images'
     PRIMARY_KEY = 'machine_image_id'
 
-    def __init__(self, machine_image_id = None, *args, **kwargs):
-        """A machine image is the baseline image or template from which
-            virtual machines may be provisioned.
-        """
+    def __init__(self, machine_image_id = None):
         Resource.__init__(self, request_details='basic')
         self.__machine_image_id = machine_image_id
+        self.__architecture = None
+        self.__legacy_owner_id = None
+        self.__creation_timestamp = None
+        self.__owning_user = None
+        self.__owning_account = None
+        self.__customer = None
+        self.__platform = None
+        self.__budget = None
+        self.__public = None
+        self.__name = None
+        self.__label = None
+        self.__removable = None
+        self.__sharable = None
+        self.__provider_id = None
+        self.__region = None
+        self.__status = None
+        self.__owning_cloud_account_number = None
+        self.__cloud = None
+        self.__owning_groups = None
+        self.__agent_version = None
+        self.__products = None
+        self.server_id = None
+        self.__description = None
 
     @property
     def machine_image_id(self):
@@ -26,12 +50,9 @@ class MachineImage(Resource):
 
     @lazy_property
     def architecture(self):
-        """`str` - The underlying CPU architecture of the virtual machine in question"""
+        """`str` - The underlying CPU architecture of the virtual machine in 
+        question"""
         return self.__architecture
-
-    @lazy_property
-    def legacy_owner_id(self):
-        return self.__legacy_owner_id
 
     @lazy_property
     def cloud(self):
@@ -44,22 +65,17 @@ class MachineImage(Resource):
 
         .. .note::
 
-                Some clouds do not report his value and it may therefore be `00:00 UTC January 1, 1970
+                Some clouds do not report his value and it may therefore 
+                be `00:00 UTC January 1, 1970
 
         """
         return self.__creation_timestamp
 
     @lazy_property
     def customer(self):
-        """`dict` - The customer in whose library this machine image record is being managed"""
+        """`dict` - The customer in whose library this machine image record 
+        is being managed"""
         return self.__customer
-
-    @lazy_property
-    def budget(self):
-        """`int` - The id of the billing code against which costs associated are
-            billed for this machine image
-        """
-        return self.__budget
 
     @lazy_property
     def name(self):
@@ -67,27 +83,29 @@ class MachineImage(Resource):
         return self.__name
 
     @name.setter
-    def name(self, n):
-        self.__name = n
+    def name(self, name):
+        """Sets the machine image name."""
+        self.__name = name
 
     @lazy_property
     def description(self):
-        """`str` - The description of the machine image established in enStratus"""
+        """`str` - The description of the machine image established in DCM"""
         return self.__description
 
     @description.setter
-    def description(self, d):
-        self.__description = d
+    def description(self, desc):
+        """Sets the description."""
+        self.__description = desc
 
     @lazy_property
     def owning_account(self):
-        """`dict` - The enStratus cloud account that is the account under which
+        """`dict` - The DCM cloud account that is the account under which
             the machine image is registered
 
             .. .note::
 
-                This value may be empty if the machine image belongs to an account
-                not using enStratus
+                This value may be empty if the machine image belongs to an 
+                account not using DCM
 
         """
         return self.__owning_account
@@ -107,11 +125,13 @@ class MachineImage(Resource):
 
     @lazy_property
     def owning_user(self):
-        """`dict` or `None` - The user who is the owner of record of this machine image.
+        """`dict` or `None` - The user who is the owner of record of this 
+        machine image.
 
             .. .note::
 
-                The owner may be null in cases of auto-discovery or certain automated scenarios
+                The owner may be null in cases of auto-discovery or certain 
+                automated scenarios
 
         """
         return self.__owning_user
@@ -123,7 +143,8 @@ class MachineImage(Resource):
 
     @lazy_property
     def platform(self):
-        """`str` - The operating system bundled into the machine image/template"""
+        """`str` - The operating system bundled into the machine 
+        image/template"""
         return self.__platform
 
     @lazy_property
@@ -165,25 +186,32 @@ class MachineImage(Resource):
 
     @lazy_property
     def agent_version(self):
-        """`int` - The version of the enStratus agent if installed on the machine image"""
+        """`int` - The version of the DCM agent if installed on the 
+        machine image"""
         return self.__agent_version
 
     @lazy_property
     def public(self):
-        """`bool` - Indicates whether or not this image is publicly shared. This value may be modified only for machine images that belong to your account. """
+        """`bool` - Indicates whether or not this image is publicly shared. 
+        This value may be modified only for machine images that belong to 
+        your account. """
         return self.__public
 
     @public.setter
-    def public(self, p):
-        self.__public = p
+    def public(self, public):
+        """Sets public"""
+        self.__public = public
 
     @lazy_property
     def budget(self):
+        """The ID of the billing code against which any costs associated with 
+        this machine image are billed."""
         return self.__budget
 
     @budget.setter
-    def budget(self, b):
-        self.__budget = b
+    def budget(self, budget):
+        """Sets the budget."""
+        self.__budget = budget
 
     @required_attrs(['machine_image_id'])
     def destroy(self, reason='no reason provided'):
@@ -193,9 +221,9 @@ class MachineImage(Resource):
         :type reason: str.
         :returns: bool -- Result of API call
         """
-        p = self.PATH+"/"+str(self.machine_image_id)
+        path = self.PATH+"/"+str(self.machine_image_id)
         qopts = {'reason':reason}
-        return self.delete(p, params=qopts)
+        return self.delete(path, params=qopts)
 
     @required_attrs(['server_id', 'name', 'budget'])
     def create(self, callback=None):
@@ -249,8 +277,8 @@ class MachineImage(Resource):
         if 'label' in kwargs:
             payload['describeImage'][0]['label'] = kwargs['label']
 
-        p = self.PATH + "/" + str(self.machine_image_id)
-        return self.put(p, data=json.dumps(payload))
+        path = self.PATH + "/" + str(self.machine_image_id)
+        return self.put(path, data=json.dumps(payload))
 
     @classmethod
     def all(cls, region_id, **kwargs):
@@ -258,19 +286,22 @@ class MachineImage(Resource):
 
         :param region_id: The region to search for machine images
         :type region_id: int.
-        :param keys_only: Return :attr:`machine_image_id` instead of :class:`MachineImage`
+        :param keys_only: Return :attr:`machine_image_id` 
+            instead of :class:`MachineImage`
         :type keys_only: bool.
         :param available: Return only available images. Default is `true`
         :type available: str.
-        :param registered: Return only images with the enStratus agent installed. Default is `false`
+        :param registered: Return only images with the enStratus agent 
+            installed. Default is `false`
         :type registered: str.
         :param detail: The level of detail to return - `basic` or `extended`
         :type detail: str.
         :returns: `list` of :class:`MachineImage` or :attr:`machine_image_id`
         :raises: :class:`MachineImageException`
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        # pylint: disable-msg=R0801
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
         params = {'regionId':region_id}
         if 'keys_only' in kwargs:
             keys_only = kwargs['keys_only']
@@ -280,13 +311,14 @@ class MachineImage(Resource):
             params['active'] = kwargs['active']
         if 'registered' in kwargs:
             params['registered'] = kwargs['registered']
-        c = r.get(params=params)
-        if r.last_error is None:
+        get_data = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                images = [item['machineImageId'] for item in c[cls.COLLECTION_NAME]]
+                images = [item['machineImageId'] \
+                for item in get_data[cls.COLLECTION_NAME]]
             else:
                 images = []
-                for i in c[cls.COLLECTION_NAME]:
+                for i in get_data[cls.COLLECTION_NAME]:
                     image = cls(i['machineImageId'])
                     if 'detail' in kwargs:
                         image.request_details = kwargs['detail']
@@ -294,6 +326,12 @@ class MachineImage(Resource):
                     images.append(image)
             return images
         else:
-            raise MachineImageException(r.last_error)
+            raise MachineImageException(res.last_error)
 
-class MachineImageException(BaseException): pass
+class MachineImageException(BaseException): 
+    """MachineImage Exception"""
+    pass
+
+class ServerLaunchException(BaseException):
+    """ServerLaunch Exception"""
+    pass

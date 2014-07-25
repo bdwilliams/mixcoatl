@@ -1,15 +1,35 @@
-"""Implements the enStratus ServerProduct API"""
+"""
+mixcoatl.infrastructure.server_product
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 
+# pylint: disable-msg=R0902,R0904
 class ServerProduct(Resource):
+    """Server products represent the available options and pricing for 
+    launching a virtual machine."""
     PATH = 'infrastructure/ServerProduct'
     COLLECTION_NAME = 'serverProducts'
     PRIMARY_KEY = 'product_id'
 
-    def __init__(self, product_id = None, *args, **kwargs):
+    def __init__(self, product_id = None):
         Resource.__init__(self)
         self.__product_id = product_id
+        self.__cloud = None
+        self.__architecture = None
+        self.__cpu_count = None
+        self.__cpu_speed_in_mhz = None
+        self.__currency = None
+        self.__hourly_rate = None
+        self.__platform = None
+        self.__ram_in_mb = None
+        self.__description = None
+        self.__disk_size_in_gb = None
+        self.__software = None
+        self.__name = None
+        self.__provider_product_id = None
+        self.__provider_region_id = None
 
     @property
     def product_id(self):
@@ -99,22 +119,22 @@ class ServerProduct(Resource):
         :returns: `list` of :attr:`product_id` or :class:`ServerProduct`
         :raises: :class:`ServerProductException`
         """
-        from mixcoatl.utils import uncamel_keys
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
         params = {'regionId':region_id}
         if 'keys_only' in kwargs:
             keys_only = kwargs['keys_only']
         else:
             keys_only = False
 
-        c = r.get(params=params)
-        if r.last_error is None:
+        get_data = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                products = [item['productId'] for item in c[cls.COLLECTION_NAME]]
+                products = [item['productId'] \
+                for item in get_data[cls.COLLECTION_NAME]]
             else:
                 products = []
-                for i in c[cls.COLLECTION_NAME]:
+                for i in get_data[cls.COLLECTION_NAME]:
                     product = cls(i['productId'])
                     if 'detail' in kwargs:
                         product.request_details = kwargs['detail']
@@ -122,6 +142,8 @@ class ServerProduct(Resource):
                     products.append(product)
             return products
         else:
-            raise ServerProductException(r.last_error)
+            raise ServerProductException(res.last_error)
 
-class ServerProductException(BaseException): pass
+class ServerProductException(BaseException): 
+    """Server Product Exception"""
+    pass

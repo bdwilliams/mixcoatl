@@ -1,2 +1,7 @@
-class BaseException(Exception): pass
-class ConfigException(BaseException): pass
+"""
+mixcoatl.exceptions
+--------------------
+"""
+class ConfigException(BaseException): 
+    """Config Exception"""
+    pass

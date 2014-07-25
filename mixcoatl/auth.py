@@ -1,3 +1,4 @@
+""" Generates auth signature for connecting to the DCM """
 import time
 import base64
 import hashlib
@@ -20,10 +21,11 @@ def get_sig(http_method, path):
     parts.append(timestamp)
     parts.append(settings.user_agent)
     # pylint: disable-msg=E1101
-    dm = hashlib.sha256
+    dm1 = hashlib.sha256
     to_sign = ':'.join([str(x) for x in parts])
-    d = hmac.new(settings.secret_key, msg=to_sign, digestmod=dm).digest()
-    b64auth = base64.b64encode(d).decode()
+    digest = hmac.new(settings.secret_key, msg=to_sign, 
+                      digestmod=dm1).digest()
+    b64auth = base64.b64encode(digest).decode()
     return {
             'timestamp':timestamp,
             'signature':b64auth,

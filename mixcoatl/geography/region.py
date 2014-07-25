@@ -1,17 +1,29 @@
-"""Implements the enStratus Region API"""
+"""
+mixcoatl.geograpy.region
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.utils import camelize
 
+# pylint: disable-msg=R0902,R0904
 class Region(Resource):
     """A region is a logical sub-infrastructure within a cloud"""
     PATH = 'geography/Region'
     COLLECTION_NAME = 'regions'
     PRIMARY_KEY = 'region_id'
 
-    def __init__(self, region_id = None, *args, **kwargs):
+    def __init__(self, region_id = None, **kwargs):
         Resource.__init__(self)
         self.__region_id = region_id
+        self.__cloud = None
+        self.__customer = None
+        self.__jurisdiction = None
+        self.__jurisdiction = None
+        self.__name = None
+        self.__provider_id = None
+        self.__status = None
+        self.__description = None
 
     @property
     def region_id(self):
@@ -36,11 +48,13 @@ class Region(Resource):
     @lazy_property
     def name(self):
         """`str` - The user-friendly name for the region"""
+        # pylint: disable-msg=R0801
         return self.__name
 
     @lazy_property
     def provider_id(self):
         """`str` - The cloud provider's unique id for the region"""
+        # pylint: disable-msg=R0801
         return self.__provider_id
 
     @lazy_property
@@ -71,23 +85,24 @@ class Region(Resource):
         :returns: `list` of :class:`Region` or :attr:`region_id`
         :raises: :class:`RegionException`
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
         params = {}
         if 'keys_only' in kwargs:
             keys_only = kwargs['keys_only']
         else:
             keys_only = False
-        for x in ['account_id', 'jurisdiction', 'scope']:
-            if x in kwargs:
-                params[camelize(x)] = kwargs[x]
-        c = r.get(params=params)
-        if r.last_error is None:
+        for attr in ['account_id', 'jurisdiction', 'scope']:
+            if attr in kwargs:
+                params[camelize(attr)] = kwargs[attr]
+        get_data = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                regions = [item['regionId'] for item in c[cls.COLLECTION_NAME]]
+                regions = [item['regionId'] \
+                for item in get_data[cls.COLLECTION_NAME]]
             else:
                 regions = []
-                for i in c[cls.COLLECTION_NAME]:
+                for i in get_data[cls.COLLECTION_NAME]:
                     region = cls(i['regionId'])
                     if 'detail' in kwargs:
                         region.request_details = kwargs['detail']
@@ -95,6 +110,8 @@ class Region(Resource):
                     regions.append(region)
             return regions
         else:
-            raise RegionException(r.last_error)
+            raise RegionException(res.last_error)
 
-class RegionException(BaseException): pass
+class RegionException(BaseException): 
+    """Region Exception"""
+    pass

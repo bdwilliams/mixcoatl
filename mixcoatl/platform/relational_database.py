@@ -1,21 +1,51 @@
+"""
+mixcoatl.platform.relational_database
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.admin.job import Job
-from mixcoatl.utils import camel_keys
 from mixcoatl.decorators.validations import required_attrs
 from mixcoatl.decorators.lazy import lazy_property
 
-import json, sys, time
+import json, time
 
+# pylint: disable-msg=R0902,R0904
 class RelationalDatabase(Resource):
-    """A relational database is a database as a service offering supporting a relational model."""
+    """A relational database is a database as a service offering supporting a 
+    relational model."""
 
     PATH = 'platform/RelationalDatabase'
     COLLECTION_NAME = 'relational_databases'
     PRIMARY_KEY = 'relational_database_id'
 
-    def __init__(self, relational_database_id=None, *args, **kwargs):
+    def __init__(self, relational_database_id=None, **kwargs):
         Resource.__init__(self)
         self.__relational_database_id = relational_database_id
+        self.__backup_window = None
+        self.__created_timestamp = None
+        self.__current_recovery_point = None
+        self.__maintenance_window = None
+        self.__cloud = None
+        self.__customer = None
+        self.__current_recovery_point = None
+        self.__owning_group = None
+        self.__owning_user = None
+        self.__provider_id = None
+        self.__status = None
+        self.__dns_name = None
+        self.__label = None
+        self.__allocated_storage_in_gb = None
+        self.__admin_password = None
+        self.__admin_user = None
+        self.__engine = None
+        self.__data_center = None
+        self.__port = None
+        self.__name = None
+        self.__description = None
+        self.__ha = None
+        self.__rdbms_product = None
+        self.__account = None
+        self.__region = None
 
     @property
     def relational_database_id(self):
@@ -28,17 +58,20 @@ class RelationalDatabase(Resource):
         return self.__label
 
     @label.setter
-    def label(self, l):
-        self.__label = l
+    def label(self, label):
+        """Set the label"""
+        self.__label = label
 
     @lazy_property
     def account(self):
-        """`int` - The DCM account under which the relational database is registered."""
+        """`int` - The DCM account under which the relational database is 
+        registered."""
         return self.__account
 
     @account.setter
-    def account(self, a):
-        self.__account = a
+    def account(self, account):
+        """Set the account"""
+        self.__account = account
 
     @lazy_property
     def admin_password(self):
@@ -46,8 +79,9 @@ class RelationalDatabase(Resource):
         return self.__admin_password
 
     @admin_password.setter
-    def admin_password(self, p):
-        self.__admin_password = p
+    def admin_password(self, password):
+        """Set the admin password"""
+        self.__admin_password = password
 
     @lazy_property
     def admin_user(self):
@@ -55,17 +89,20 @@ class RelationalDatabase(Resource):
         return self.__admin_user
 
     @admin_user.setter
-    def admin_user(self, u):
-        self.__admin_user = u
+    def admin_user(self, user):
+        """Set the admin user"""
+        self.__admin_user = user
 
     @lazy_property
     def allocated_storage_in_gb(self):
-        """`int` - The amount of storage allocated to the relational database in GB."""
+        """`int` - The amount of storage allocated to the relational 
+        database in GB."""
         return self.__allocated_storage_in_gb
 
     @allocated_storage_in_gb.setter
-    def allocated_storage_in_gb(self, g):
-        self.__allocated_storage_in_gb = g
+    def allocated_storage_in_gb(self, gbs):
+        """Set allocated storage in gb"""
+        self.__allocated_storage_in_gb = gbs
 
     @lazy_property
     def backup_window(self):
@@ -84,7 +121,8 @@ class RelationalDatabase(Resource):
 
     @lazy_property
     def current_recovery_point(self):
-        """`str` - Specifies the latest time to which the database can be restored with point-in-time restore."""
+        """`str` - Specifies the latest time to which the database can be 
+        restored with point-in-time restore."""
         return self.__current_recovery_point
 
     @lazy_property
@@ -98,8 +136,9 @@ class RelationalDatabase(Resource):
         return self.__data_center
 
     @data_center.setter
-    def data_center(self, d):
-        self.__data_center = {u'data_center_id': d}
+    def data_center(self, dcs):
+        """Set the datacenter"""
+        self.__data_center = {u'data_center_id': dcs}
 
     @lazy_property
     def description(self):
@@ -107,35 +146,43 @@ class RelationalDatabase(Resource):
         return self.__description
 
     @description.setter
-    def description(self, d):
-        self.__description = d
+    def description(self, desc):
+        """Set the description"""
+        self.__description = desc
 
     @lazy_property
     def dns_name(self):
-        """`str` - A DNS name associated with the relational database server."""
+        """`str` - A DNS name associated with the relational database 
+        server."""
         return self.__dns_name
 
-    @description.setter
-    def dns_name(self, d):
-        self.__dns_name = d
+    @dns_name.setter
+    def dns_name(self, dns_name):
+        """Set the DNS name"""
+        self.__dns_name = dns_name
 
     @lazy_property
     def engine(self):
-        """ `enum` - The database engine powering this relational database. examples: MYSQL, ORACLE11G"""
+        """ `enum` - The database engine powering this relational database. 
+        examples: MYSQL, ORACLE11G"""
         return self.__engine
 
     @engine.setter
-    def engine(self, e):
-        self.__engine = e
+    def engine(self, engine):
+        """Set the engine"""
+        self.__engine = engine
 
     @lazy_property
+    # pylint: disable-msg=C0103
     def ha(self):
         """`bool` - Indicates if high availability is enabled."""
         return self.__ha
 
     @ha.setter
-    def ha(self, h):
-        self.__ha = h
+    # pylint: disable-msg=C0103
+    def ha(self, has):
+        """Set HA"""
+        self.__ha = has
 
     @lazy_property
     def maintenance_window(self):
@@ -144,16 +191,19 @@ class RelationalDatabase(Resource):
 
     @lazy_property
     def name(self):
-        """`str` - A user-friendly name to describe this relational database."""
+        """`str` - A user-friendly name to describe this relational 
+        database."""
         return self.__name
 
     @name.setter
-    def name(self, n):
-        self.__name = n
+    def name(self, name):
+        """Set the name"""
+        self.__name = name
 
     @lazy_property
     def owning_group(self):
-        """`str` - The group who has ownership over this relational database."""
+        """`str` - The group who has ownership over this relational 
+        database."""
         return self.__owning_group
 
     @lazy_property
@@ -167,22 +217,26 @@ class RelationalDatabase(Resource):
         return self.__port
 
     @port.setter
-    def port(self, n):
-        self.__port = n
+    def port(self, port):
+        """Set the port"""
+        self.__port = port
 
     @lazy_property
     def provider_id(self):
-        """`str` - How this relational database is identified by cloud provider."""
+        """`str` - How this relational database is identified by cloud 
+        provider."""
         return self.__provider_id
 
     @lazy_property
     def rdbms_product(self):
-        """`int` - The relational database product associated with this database."""
+        """`int` - The relational database product associated with this 
+        database."""
         return self.__rdbms_product
 
     @rdbms_product.setter
-    def rdbms_product(self, r):
-        self.__rdbms_product = r
+    def rdbms_product(self, rdbms):
+        """Set the RDBMS"""
+        self.__rdbms_product = rdbms
 
     @lazy_property
     def region(self):
@@ -190,12 +244,14 @@ class RelationalDatabase(Resource):
         return self.__region
 
     @region.setter
-    def region(self, r):
-        self.__region = r
+    def region(self, region):
+        """Set the region"""
+        self.__region = region
 
     @lazy_property
     def status(self):
-        """`str` - The current status of the database *(i.e. `RUNNING` or `PAUSED`)*."""
+        """`str` - The current status of the database 
+        *(i.e. `RUNNING` or `PAUSED`)*."""
         return self.__status
 
     def reload(self):
@@ -220,12 +276,19 @@ class RelationalDatabase(Resource):
         :type reason: str.
         :returns: bool -- Result of API call
         """
-        p = self.PATH+"/"+str(self.relational_database_id)
+        path = self.PATH+"/"+str(self.relational_database_id)
         qopts = {'reason':reason}
-        return self.delete(p, params=qopts)
+        return self.delete(path, params=qopts)
 
-    @required_attrs(['name', 'description', 'port', 'engine', 'rdbms_product', 'data_center',
-                     'allocated_storage_in_gb', 'admin_user', 'admin_password'])
+    @required_attrs(['name', 
+                    'description', 
+                    'port', 
+                    'engine', 
+                    'rdbms_product', 
+                    'data_center',
+                    'allocated_storage_in_gb', 
+                    'admin_user', 
+                    'admin_password'])
     def launch(self, callback=None):
         """Launches a relational database with the configured parameters
 
@@ -245,11 +308,16 @@ class RelationalDatabase(Resource):
         :param callback: Optional callback to send the results of the API call
         :type callback: func.
         :returns: int -- The job id of the launch request
-        :raises: :class:`RelationalDatabaseLaunchException`, :class:`mixcoatl.decorators.validations.ValidationException`
+        :raises: :class:`RelationalDatabaseLaunchException`, 
+            :class:`mixcoatl.decorators.validations.ValidationException`
         """
-#        optional_attrs = ['vlan', 'firewalls', 'keypair', 'label', 'cmAccount', 'environment', 'cm_scripts', 'p_scripts', 'volumeConfiguration']
+#        optional_attrs = ['vlan', 'firewalls', 'keypair', 'label', 
+#        'cmAccount', 'environment', 'cm_scripts', 'p_scripts', 
+#        'volumeConfiguration']
 #        if self.relational_database_id is not None:
-#            raise RelationalDatabaseLaunchException('Cannot launch an already running relational_database: %s' % self.relational_database_id)
+#            raise RelationalDatabaseLaunchException('Cannot launch an \
+#            already running \
+#            relational_database: %s' % self.relational_database_id)
 #
 #        payload = {'launch':
 #                    [{
@@ -265,18 +333,25 @@ class RelationalDatabase(Resource):
 #            try:
 #                if getattr(self, oa) is not None:
 #                    if oa == 'cm_scripts':
-#                        payload['launch'][0].update({'scripts':getattr(self, oa)})
+#                        payload['launch'][0]\
+#                        .update({'scripts':getattr(self, oa)})
 #                    elif oa == 'p_scripts':
-#                        payload['launch'][0].update({'personalities':getattr(self, oa)})
+#                        payload['launch'][0]\
+#                        .update({'personalities':getattr(self, oa)})
 #                    elif oa == 'volumeConfiguration':
-#                        payload['launch'][0].update({'volumeConfiguration':{u'raidlevel':'RAID0', u'volumeCount':1, u'volumeSize':2, u'fileSystem':'ext3', u'mountPoint':'/mnt/data'}})
+#                        payload['launch'][0]\
+#                        .update({'volumeConfiguration':{u'raidlevel':'RAID0',\
+#                        u'volumeCount':1, u'volumeSize':2, \
+#                        u'fileSystem':'ext3', u'mountPoint':'/mnt/data'}})
 #                    elif oa == 'vlan':
-#                        payload['launch'][0].update({'vlan':camel_keys(getattr(self, oa))})
+#                        payload['launch'][0]\
+#                        .update({'vlan':camel_keys(getattr(self, oa))})
 #                    else:
-#                        payload['launch'][0].update({oa:getattr(self, oa)})
+#                        payload['launch'][0]\
+#                        .update({oa:getattr(self, oa)})
 #            except AttributeError:
 #                pass
-
+        payload = None
         self.post(data=json.dumps(payload))
         if self.last_error is None:
             if callback is not None:
@@ -287,16 +362,20 @@ class RelationalDatabase(Resource):
             raise RelationalDatabaseLaunchException(self.last_error)
 
     def wait_for(self, status='RUNNING', callback = None):
-        """Blocks execution until the current relational_database has status of :attr:`status`
+        """Blocks execution until the current relational_database has status 
+        of :attr:`status`
 
-        :param status: The status to expect before continuing *(i.e. `RUNNING` or `PAUSED`)*
+        :param status: The status to expect before continuing 
+            *(i.e. `RUNNING` or `PAUSED`)*
         :type status: str.
-        :param callback: Optional callback to be called with the final :class:`RelationalDatabase`` when ``status`` is reached
+        :param callback: Optional callback to be called with the 
+            final :class:`RelationalDatabase`` when ``status`` is reached
         :type callback: func.
         :raises: `RelationalDatabaseException`
         """
         if self.relational_database_id is None:
-            raise RelationalDatabaseException('Must be called with an existing relational_database.')
+            raise RelationalDatabaseException('Must be called with an \
+                                              existing relational_database.')
         initial_status = self.status
         if self.last_error is None:
             if initial_status == status:
@@ -323,19 +402,27 @@ class RelationalDatabase(Resource):
         :returns: list -- a list of :class:`RelationalDatabase`
         :raises: RelationalDatabaseException
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
 
         if 'params' in kwargs:
-          params = kwargs['params']
+            params = kwargs['params']
         else:
-          params = []
-        s = r.get(params=params)
-        if r.last_error is None:
-            relational_databases = [cls(relational_database['relationalDatabaseId']) for relational_database in s[cls.COLLECTION_NAME]]
+            params = []
+        get_data = res.get(params=params)
+        if res.last_error is None:
+            relational_databases = [\
+            cls(relational_database['relationalDatabaseId']) \
+            for relational_database in get_data[cls.COLLECTION_NAME]]
             return relational_databases
         else:
-            raise RelationalDatabaseException(r.last_error)
+            raise RelationalDatabaseException(res.last_error)
 
-class RelationalDatabaseException(BaseException): pass
-class RelationalDatabaseLaunchException(RelationalDatabaseException): pass
+class RelationalDatabaseException(BaseException): 
+    """Relational Database Exception"""
+    pass
+
+class RelationalDatabaseLaunchException(RelationalDatabaseException): 
+    """Relational Database Launch Exception"""
+    pass
+

@@ -2,14 +2,14 @@
 mixcoatl.admin.billing_code
 ---------------------------
 
-Implements access to the enStratus Billingcode API
+Implements access to the DCM Billingcode API
 """
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.decorators.validations import required_attrs
-
 import json
 
+# pylint: disable-msg=R0904,R0902
 class BillingCode(Resource):
     """A billing code is a budget item with optional hard and soft quotas
     against which cloud resources may be provisioned and tracked."""
@@ -18,9 +18,19 @@ class BillingCode(Resource):
     COLLECTION_NAME = 'billingCodes'
     PRIMARY_KEY = 'billing_code_id'
 
-    def __init__(self, billing_code_id = None, *args, **kwargs):
+    def __init__(self, billing_code_id = None, **kwargs):
         Resource.__init__(self)
         self.__billing_code_id = billing_code_id
+        self.__budget_state = None
+        self.__current_usage = None
+        self.__customer = None
+        self.__projected_usage = None
+        self.__status = None
+        self.__soft_quota = None
+        self.__hard_quota = None
+        self.__finance_code = None
+        self.__name = None
+        self.__description = None
 
     @property
     def billing_code_id(self):
@@ -48,8 +58,9 @@ class BillingCode(Resource):
         return self.__description
 
     @description.setter
-    def description(self, d):
-        self.__description = d
+    def description(self, description):
+        """Sets the billing code description"""
+        self.__description = description
 
     @lazy_property
     def finance_code(self):
@@ -57,8 +68,9 @@ class BillingCode(Resource):
         return self.__finance_code
     
     @finance_code.setter
-    def finance_code(self, f):
-        self.__finance_code = f
+    def finance_code(self, fcode):
+        """Sets the billing code"""
+        self.__finance_code = fcode
 
     @lazy_property
     def name(self):
@@ -66,12 +78,13 @@ class BillingCode(Resource):
         return self.__name
 
     @name.setter
-    def name(self, n):
-        self.__name = n
+    def name(self, name):
+        """Sets the billing code name"""
+        self.__name = name
 
     @lazy_property
     def projected_usage(self):
-        """`dict` - Estimated end-of-month total to be charged against this budget"""
+        """`dict` - Estimated end-of-month total charged against this budget"""
         return self.__projected_usage
 
     @lazy_property
@@ -81,21 +94,23 @@ class BillingCode(Resource):
 
     @lazy_property
     def hard_quota(self):
-        """`dict` - Cutoff point where no further resources can be billed to this code"""
+        """`dict` - Cutoff point where no further resources can be billed """
         return self.__hard_quota
 
     @hard_quota.setter
-    def hard_quota(self, h):
-        self.__hard_quota = h
+    def hard_quota(self, hquota):
+        """Sets the hard quota"""
+        self.__hard_quota = hquota
 
     @lazy_property
     def soft_quota(self):
-        """`dict` - Point where budget alerts will be triggered for this billing code"""
+        """`dict` - Point where budget alerts will be triggered"""
         return self.__soft_quota
 
     @soft_quota.setter
-    def soft_quota(self, s):
-        self.__soft_quota = s
+    def soft_quota(self, squota):
+        """Sets the soft quota"""
+        self.__soft_quota = squota
 
     @classmethod
     def all(cls, keys_only = False, **kwargs):
@@ -103,41 +118,47 @@ class BillingCode(Resource):
 
         .. note::
 
-            The keys used to make the original request determine result visibility
+        The keys used to make the original request determine result visibility
 
-        :param keys_only: Only return :attr:`billing_code_id` instead of :class:`BillingCode` objects
+        :param keys_only: Only return :attr:`billing_code_id` 
+            instead of :class:`BillingCode` objects
         :type keys_only: bool.
         :param detail: The level of detail to return - `basic` or `extended`
         :type detail: str.
         :returns: `list` - of :class:`BillingCode` or :attr:`billing_code_id`
         :raises: :class:`BillingCodeException`
         """
-        r = Resource(cls.PATH)
+        res = Resource(cls.PATH)
         if 'details' in kwargs:
-            r.request_details = kwargs['details']
+            res.request_details = kwargs['details']
         else:
-            r.request_details = 'basic'
+            res.request_details = 'basic'
 
-        x = r.get()
-        if r.last_error is None:
+        bcs = res.get()
+        if res.last_error is None:
             if keys_only is True:
-                return [i['billingCodeId'] for i in x[cls.COLLECTION_NAME]]
+                return [i['billingCodeId'] for i in bcs[cls.COLLECTION_NAME]]
             else:
-                return [cls(i['billingCodeId']) for i in x[cls.COLLECTION_NAME]]
+                return [cls(i['billingCodeId']) \
+                for i in bcs[cls.COLLECTION_NAME]]
         else:
-            raise BillingCodeException(r.last_error)
+            raise BillingCodeException(res.last_error)
 
-    @required_attrs(['soft_quota','hard_quota', 'name', 'finance_code', 'description'])
+    @required_attrs(['soft_quota',
+                    'hard_quota',
+                    'name',
+                    'finance_code',
+                    'description'])
     def add(self):
         """Add a new billing code. """
 
-        payload = { "addBillingCode":[{
-                       "softQuota": {"value": self.soft_quota, "currency": "USD"},
-                       "hardQuota": {"value": self.hard_quota, "currency": "USD"},
-                       "status": "ACTIVE",
-                       "name": self.name,
-                       "financeCode": self.finance_code,
-                       "description": self.description }]}
+        payload = {"addBillingCode":[{
+                   "softQuota": {"value": self.soft_quota, "currency": "USD"},
+                   "hardQuota": {"value": self.hard_quota, "currency": "USD"},
+                   "status": "ACTIVE",
+                   "name": self.name,
+                   "financeCode": self.finance_code,
+                   "description": self.description}]}
         response = self.post(data=json.dumps(payload))
         if self.last_error is None:
             return response
@@ -154,14 +175,22 @@ class BillingCode(Resource):
         :type replacement_code: int.
         :returns: bool -- Result of API call
         """
-        p = self.PATH+"/"+str(self.billing_code_id)
+        path = self.PATH+"/"+str(self.billing_code_id)
         qopts = {'reason':reason, 'replacementCode':replacement_code}
-        self.delete(p, params=qopts)
+        self.delete(path, params=qopts)
         if self.last_error is None:
             return True
         else:
             raise BillingCodeDestroyException(self.last_error)
 
-class BillingCodeException(BaseException): pass
-class BillingCodeAddException(BillingCodeException): pass
-class BillingCodeDestroyException(BillingCodeException): pass
+class BillingCodeException(BaseException): 
+    """Billing Code Exception"""
+    pass
+
+class BillingCodeAddException(BillingCodeException): 
+    """Billing Code Add Exception"""
+    pass
+
+class BillingCodeDestroyException(BillingCodeException):
+    """Billing Code Destroy Exception"""
+    pass

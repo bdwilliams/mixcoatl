@@ -1,4 +1,7 @@
-"""Implements access to the enStratus Snapshot API"""
+"""
+mixcoatl.infrastructure.snapshot
+--------------------
+"""
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.decorators.validations import required_attrs
@@ -7,16 +10,32 @@ from mixcoatl.admin.job import Job
 
 import json
 
+# pylint: disable-msg=R0902,R0904
 class Snapshot(Resource):
     """A snapshot is a point-in-time snapshot of a volume"""
     PATH = 'infrastructure/Snapshot'
     COLLECTION_NAME = 'snapshots'
     PRIMARY_KEY = 'snapshot_id'
 
-    def __init__(self, snapshot_id = None, *args, **kwargs):
-        # pylint: disable-msg=W0613
+    def __init__(self, snapshot_id = None, **kwargs):
         Resource.__init__(self)
         self.__snapshot_id = snapshot_id
+        self.__available = None
+        self.__cloud = None
+        self.__customer = None
+        self.__encrypted = None
+        self.__owning_account = None
+        self.__owning_user = None
+        self.__provider_id = None
+        self.__removable = None
+        self.__sharable = None
+        self.__size_in_gb = None
+        self.__status = None
+        self.__region = None
+        self.__created_timestamp = None
+        self.__owning_groups = None
+        self.__name = None
+        self.__description = None
 
     @property
     def snapshot_id(self):
@@ -25,12 +44,14 @@ class Snapshot(Resource):
 
     @lazy_property
     def available(self):
-        """`bool` - Identifies if the snapshot is available for creating volumes"""
+        """`bool` - Identifies if the snapshot is available for creating 
+        volumes"""
         return self.__available
 
     @lazy_property
     def budget(self):
-        """`int` - The id of the billing code against which costs will be associated"""
+        """`int` - The id of the billing code against which costs will be 
+        associated"""
         # pylint: disable-msg=E0202
         return self.__budget
 
@@ -56,13 +77,14 @@ class Snapshot(Resource):
 
     @lazy_property
     def description(self):
-        """`str` - The description of the snapshot established in enStratus"""
-        # pylint: disable-msg=E0202
+        """`str` - The description of the snapshot established in DCM"""
+        # pylint: disable-msg=E0202,R0801
         return self.__description
 
     @description.setter
     def description(self, desc):
-        # pylint: disable-msg=C0111,W0201
+        """Set the description."""
+        # pylint: disable-msg=E0202,R0801
         self.__description = desc
 
     @lazy_property
@@ -73,52 +95,59 @@ class Snapshot(Resource):
     @lazy_property
     def name(self):
         """`str` - The user-friendly name of the snapshot"""
-        # pylint: disable-msg=E0202
+        # pylint: disable-msg=E0202,R0801        
         return self.__name
 
     @name.setter
     def name(self, name):
-        # pylint: disable-msg=C0111,W0201
+        # pylint: disable-msg=E0202,R0801
         self.__name = name
 
     @lazy_property
     def label(self):
         """`str` - The label assigned to the snapshot"""
+        # pylint: disable-msg=E0202,R0801
         return self.__label
 
     @label.setter
     def label(self, label):
+        """Set the label."""
         # pylint: disable-msg=C0111,W0201
         self.__label = label
 
     @lazy_property
     def owning_account(self):
-        """`dict` or `None` - The enStratus account where the snapshot is registered"""
+        """`dict` or `None` - The DCM account where the snapshot is 
+        registered"""
         return self.__owning_account
 
     @lazy_property
     def owning_user(self):
-        """`dict` or `None` - The enStratus user who has ownership of this snapshot"""
+        """`dict` or `None` - The DCM user who has ownership of this 
+        snapshot"""
         return self.__owning_user
 
     @lazy_property
     def owning_groups(self):
-        """`dict` - The enStratus groups who have ownership of this snapshot"""
+        """`dict` - The DCM groups who have ownership of this snapshot"""
         return self.__owning_groups
 
     @lazy_property
     def provider_id(self):
         """`str` - The cloud provider's unique id for the snapshot"""
+        # pylint: disable-msg=R0801
         return self.__provider_id
 
     @lazy_property
     def region(self):
+        # pylint: disable-msg=E0202,R0801
         """`dict` - The cloud region where the snapshot is stored"""
         return self.__region
 
     @lazy_property
     def removable(self):
         """`bool` - Indicates if this snapshot can be removed"""
+        # pylint: disable-msg=E0202,R0801
         return self.__removable
 
     @lazy_property
@@ -133,12 +162,13 @@ class Snapshot(Resource):
 
     @lazy_property
     def status(self):
-        """`str` - The enStratus status of the snapshot *(`ACTIVE`|`INACTIVE`)*"""
+        """`str` - The DCM status of the snapshot *(`ACTIVE`|`INACTIVE`)*"""
         return self.__status
 
     @lazy_property
     def volume(self):
-        """`dict` or `None` - The volume, if known, from which the snapshot was created"""
+        """`dict` or `None` - The volume, if known, from which the 
+        snapshot was created"""
         # pylint: disable-msg=E0202
         return self.__volume
 
@@ -159,7 +189,8 @@ class Snapshot(Resource):
         params = {'reason':reason}
 
         try:
-            return self.delete(self.PATH+'/'+str(self.snapshot_id), params=params)
+            return self.delete(self.PATH+'/'+str(self.snapshot_id), 
+                               params=params)
         except:
             raise SnapshotException(self.last_error)
 
@@ -174,15 +205,16 @@ class Snapshot(Resource):
             pass
         else:
             payload = {'describeSnapshot':[{}]}
-            for x in ['name', 'description', 'label']:
-                if x in self.pending_changes:
-                    new_val = self.pending_changes[x]['new']
-                    payload['describeSnapshot'][0][camel_keys(x)] = new_val
-                    self.pending_changes.pop(x, None)
+            for attr in ['name', 'description', 'label']:
+                if attr in self.pending_changes:
+                    new_val = self.pending_changes[attr]['new']
+                    payload['describeSnapshot'][0][camel_keys(attr)] = new_val
+                    self.pending_changes.pop(attr, None)
             if len(payload['describeSnapshot'][0]) == 0:
                 pass
             else:
-                self.put(self.PATH+'/'+str(self.snapshot_id), data=json.dumps(payload))
+                self.put(self.PATH+'/'+str(self.snapshot_id), 
+                         data=json.dumps(payload))
 
             if self.last_error is None:
                 self.load()
@@ -199,7 +231,8 @@ class Snapshot(Resource):
         """
 
         if self.snapshot_id is not None:
-            raise SnapshotException('Cannot snapshot a snapshot: %s' % self.snapshot_id)
+            raise SnapshotException('Cannot snapshot a \
+                                    snapshot: %s' % self.snapshot_id)
 
         payload = {'addSnapshot':[{}]}
         payload['addSnapshot'][0]['volume'] = camel_keys(self.volume)
@@ -208,10 +241,11 @@ class Snapshot(Resource):
         payload['addSnapshot'][0]['budget'] = self.budget
         optional_attrs = ['label']
 
-        for oa in optional_attrs:
+        for oas in optional_attrs:
             try:
-                if getattr(self, oa) is not None:
-                    payload['addSnapshot'][0].update(camel_keys({oa:getattr(self, oa)}))
+                if getattr(self, oas) is not None:
+                    payload['addSnapshot'][0]\
+                    .update(camel_keys({oas:getattr(self, oas)}))
             except AttributeError:
                 # We did say optional....
                 pass
@@ -241,8 +275,8 @@ class Snapshot(Resource):
         :returns: `list` of :attr:`snapshot_id` or :class:`Snapshot`
         :raises: :class:`SnapshotException`
         """
-        r = Resource(cls.PATH)
-        r.request_details = 'basic'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
         params = {}
         if 'keys_only' in kwargs:
             keys_only = kwargs['keys_only']
@@ -254,13 +288,14 @@ class Snapshot(Resource):
             params['accountId'] = kwargs['account_id']
         if 'volume_id' in kwargs:
             params['volumeId'] = kwargs['volume_id']
-        c = r.get(params=params)
-        if r.last_error is None:
+        snap = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                snapshots = [item['snapshotId'] for item in c[cls.COLLECTION_NAME]]
+                snapshots = [item['snapshotId'] \
+                for item in snap[cls.COLLECTION_NAME]]
             else:
                 snapshots = []
-                for i in c[cls.COLLECTION_NAME]:
+                for i in snap[cls.COLLECTION_NAME]:
                     snapshot = cls(i['snapshotId'])
                     if 'detail' in kwargs:
                         snapshot.request_details = kwargs['detail']
@@ -268,7 +303,7 @@ class Snapshot(Resource):
                     snapshots.append(snapshot)
             return snapshots
         else:
-            raise SnapshotException(r.last_error)
+            raise SnapshotException(res.last_error)
 
     @classmethod
     def describe_snapshot(cls, snapshot_id, **kwargs):
@@ -285,12 +320,12 @@ class Snapshot(Resource):
         :returns: :class:`Snapshot`
         :raises: :class:`SnapshotException`
         """
-        s = cls(snapshot_id)
-        for x in ['name', 'description', 'label']:
-            if x in kwargs:
-                setattr(s, x, kwargs[x])
-        s.update()
-        return s
+        snap = cls(snapshot_id)
+        for attr in ['name', 'description', 'label']:
+            if attr in kwargs:
+                setattr(snap, attr, kwargs[attr])
+        snap.update()
+        return snap
 
     @classmethod
     def delete_snapshot(cls, snapshot_id, reason):
@@ -303,18 +338,21 @@ class Snapshot(Resource):
         :returns: `bool`
         :raises: :class:`SnapshotException`
         """
-        s = cls(snapshot_id)
-        return s.destroy(reason=reason)
+        snap = cls(snapshot_id)
+        return snap.destroy(reason=reason)
 
     @classmethod
+    # pylint: disable-msg=R0913
     def add_snapshot(cls, volume_id, name, description, budget, callback=None):
         """Creates a snapshot from `volume_id`
 
             .. warning::
 
                 Snapshot creation is an asynchronous task.
-                Specifying a callback will cause a blocking operation while the snapshot completes.
-                When using the callback, execution could block for a **VERY** long time depending on the time it takes to make the snapshot.
+                Specifying a callback will cause a blocking operation while 
+                the snapshot completes.  When using the callback, execution 
+                could block for a **VERY** long time depending on the time it 
+                takes to make the snapshot.
 
         :param volume_id: The volume to snapshot
         :type volume_id: int.
@@ -324,33 +362,34 @@ class Snapshot(Resource):
         :type description: str.
         :param budget: The billing code for the snapshot
         :type budget: int.
-        :param callback: An optional callback to send the final :class:`Snapshot`.
+        :param callback: An optional callback to send the 
+            final :class:`Snapshot`.
         :type callback: func.
         :returns: :class:`Snapshot`
         :raises: :class:`SnapshotException`
         """
 
-        s = cls()
-        s.volume = volume_id
-        s.name = name
-        s.budget = budget
-        s.description = description
-        s.create()
-        if s.current_job is None:
+        snap = cls()
+        snap.volume = volume_id
+        snap.name = name
+        snap.budget = budget
+        snap.description = description
+        snap.create()
+        if snap.current_job is None:
             raise SnapshotException('No job found. This is...odd')
         else:
             if callback is not None:
-                job = Job.wait_for(s.current_job)
+                job = Job.wait_for(snap.current_job)
                 if job is True:
                     try:
-                        j = Job(s.current_job)
+                        j = Job(snap.current_job)
                         snapshot = cls(j.message)
                         snapshot.load()
                         callback(snapshot)
                     except:
                         raise SnapshotException("Unhandled error in callback")
             else:
-                return s
+                return snap
 
 class SnapshotException(BaseException):
     """Generic exception for Snapshots"""

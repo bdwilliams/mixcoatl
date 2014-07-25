@@ -2,26 +2,31 @@
 mixcoatl.admin.role
 --------------------
 
-Implements access to the enStratus Role API
+Implements access to the DCM Role API
 
 """
 from mixcoatl.resource import Resource
 from mixcoatl.decorators.lazy import lazy_property
 from mixcoatl.decorators.validations import required_attrs
-from mixcoatl.utils import camelize, camel_keys
+from mixcoatl.utils import camel_keys
 
 import json
 
+# pylint: disable-msg=R0902,R0904
 class Role(Resource):
-    """A role defines a common set of permissions that govern access into a given account"""
+    """A role defines a common set of permissions that govern access into a 
+    given account"""
 
     PATH = 'admin/Role'
     COLLECTION_NAME = 'roles'
     PRIMARY_KEY = 'role_id'
 
-    def __init__(self, role_id=None, *args, **kwargs):
+    def __init__(self, role_id=None, **kwargs):
         Resource.__init__(self)
         self.__role_id = role_id
+        self.__acl = None
+        self.__status = None
+        self.__customer = None
 
     @property
     def role_id(self):
@@ -33,20 +38,31 @@ class Role(Resource):
         """`dict` - The access permissions associated with the role"""
         return self.__acl
 
+    @acl.setter
+    def acl(self, acl):
+        """Sets access permissions for the role."""
+        self.__acl = acl
+
     @lazy_property
     def description(self):
         """`str` - A user-friendly description of the role"""
         return self.__description
 
     @description.setter
-    def description(self, b):
+    def description(self, desc):
+        """Sets the name of the description."""
         # pylint: disable-msg=C0111,W0201
-        self.__description = b
+        self.__description = desc
 
     @lazy_property
     def customer(self):
         """`dict` - The customer to whom this role belongs"""
         return self.__customer
+
+    @customer.setter
+    def customer(self, customer):
+        """Sets the customer of the role."""
+        self.__customer = customer
 
     @lazy_property
     def name(self):
@@ -54,32 +70,39 @@ class Role(Resource):
         return self.__name
 
     @name.setter
-    def name(self, b):
+    def name(self, desc):
+        """Sets the name of the role."""
         # pylint: disable-msg=C0111,W0201
-        self.__name = b
+        self.__name = desc
 
     @lazy_property
     def status(self):
-        """`str` - The status of the role in enStratus"""
+        """`str` - The status of the role in DCM"""
         return self.__status
 
+    @status.setter
+    def status(self, status):
+        """Sets the status of the role."""
+        self.__status = status
+
     @required_attrs(['role_id'])
-    def grant(self,role_id,resource_type, action, qualifier):
+    def grant(self, role_id, resource_type, action, qualifier):
         """Adds a new ACL to a role."""
 
         parms = [{'acl': [{'resourceType' : resource_type,
                     'action' : action,
                     'qualifier' : qualifier}]}]
 
-        p = '%s/%s' % (self.PATH, str(self.role_id))
+        path = '%s/%s' % (self.PATH, str(role_id))
 
         payload = {'grant':camel_keys(parms)}
 
-        return self.put(p, data=json.dumps(payload))
+        response = self.put(path, data=json.dumps(payload))
         if self.last_error is None:
             self.load()
+            return response
         else:
-            raise setACLException(self.last_error)
+            raise SetACLException(self.last_error)
 
     @required_attrs(['name', 'description'])
     def create(self):
@@ -91,7 +114,7 @@ class Role(Resource):
 
         payload = {'addRole':camel_keys(parms)}
 
-        response=self.post(data=json.dumps(payload))
+        response = self.post(data=json.dumps(payload))
         if self.last_error is None:
             self.load()
             return response
@@ -106,23 +129,25 @@ class Role(Resource):
 
             The keys used to make the request determine results visibility
 
-        :param keys_only: Only return :attr:`role_id` instead of :class:`Group` objects
+        :param keys_only: Only return :attr:`role_id` 
+            instead of :class:`Group` objects
         :type keys_only: bool.
         :param detail: The level of detail to return - `basic` or `extended`
         :type detail: str.
-        :param account_id: List roles with mappings to groups in the specified account
+        :param account_id: List roles with mappings to groups in the 
+            specified account
         :type account_id: int.
         :param group_id: Provides the role associated with the specified group
         :type group_id: int.
         :returns: `list` of :attr:`role_id` or :class:`Role`
         :raises: :class:`RoleException`
         """
-        r = Resource(cls.PATH)
+        res = Resource(cls.PATH)
         params = {}
         if 'detail' in kwargs:
-            r.request_details = kwargs['detail']
+            res.request_details = kwargs['detail']
         else:
-            r.request_details = 'basic'
+            res.request_details = 'basic'
 
         if 'account_id' in kwargs:
             params['account_id'] = kwargs['account_id']
@@ -130,18 +155,20 @@ class Role(Resource):
         if 'group_id' in kwargs:
             params['group_id'] = kwargs['group_id']
 
-        x = r.get(params=params)
-        if r.last_error is None:
+        roles = res.get(params=params)
+        if res.last_error is None:
             if keys_only is True:
-                return [i['roleId'] for i in x[cls.COLLECTION_NAME]]
+                return [i['roleId'] for i in roles[cls.COLLECTION_NAME]]
             else:
-                return [cls(i['roleId']) for i in x[cls.COLLECTION_NAME]]
+                return [cls(i['roleId']) for i in roles[cls.COLLECTION_NAME]]
         else:
-            raise RoleException(r.last_error)
+            raise RoleException(res.last_error)
 
-class RoleException(BaseException): pass
+class RoleException(BaseException): 
+    """Role Exception"""
+    pass
 
-class setACLException(RoleException):
+class SetACLException(RoleException):
     """Role Creation Exception"""
     pass
 
