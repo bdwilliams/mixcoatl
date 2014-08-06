@@ -11,14 +11,7 @@ class ConfigurationManagementAccount(Resource):
     """A configuration management account is an account with a configuration 
     management service. A typical DCM installation will have any number 
     of configuration management services for different configuration management 
-    systems (Chef, Puppet, etc.) installed.  DCM also supports 
-    customer-owned configuration management services as well. A configuration 
-    management account is simply an account in one of these services. For 
-    example, you might set up two Chef repositories—one in the OpsCode platform 
-    and one inside your data center. You would therefore two configuration 
-    management accounts in DCM tied to two different configuration 
-    management services, both based on the single Chef configuration management 
-    system."""
+    systems (Chef, Puppet, etc.) installed."""
     PATH = 'automation/ConfigurationManagementAccount'
     COLLECTION_NAME = 'cmAccounts'
     PRIMARY_KEY = 'cm_account_id'

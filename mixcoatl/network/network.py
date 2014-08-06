@@ -13,10 +13,10 @@ import json
 # pylint: disable-msg=R0902,R0904
 class Network(Resource):
     """Enstratius models two distinct kinds of networks as network resources:
-        • Standard networks such as an AWS VPC or Cloud.com network that 
+        Standard networks such as an AWS VPC or Cloud.com network that 
         represent a network as known to a cloud provider
-        • Overlay networks such as a VPNCubed, CloudSwitch, or vCider network 
-        in which the network is an overlay on top of the cloud provider’s 
+        Overlay networks such as a VPNCubed, CloudSwitch, or vCider network 
+        in which the network is an overlay on top of the cloud provider's 
         network"""
     PATH = 'network/Network'
     COLLECTION_NAME = 'networks'

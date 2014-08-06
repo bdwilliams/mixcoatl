@@ -7,7 +7,7 @@ from mixcoatl.resource import Resource
 class Script(Resource):
     """An DCM script represents some kind of scriptable item of code 
     managed in a CM account. It may or may not actually be what you would think
-    of as a shell script. How DCM maps a “script” to a specific CM account 
+    of as a shell script. How DCM maps a 'script' to a specific CM account 
     depends on the underlying CM system. A Chef script is a recipe and a Puppet
     script is a class. An Object Store script is an executable file."""
     PATH = 'automation/Script'

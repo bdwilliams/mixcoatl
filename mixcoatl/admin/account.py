@@ -17,22 +17,10 @@ class Account(Resource):
     COLLECTION_NAME = 'accounts'
     PRIMARY_KEY = 'account_id'
 
-    def __init__(self, account_id = None, **kwargs):
+    def __init__(self, account_id = None):
         Resource.__init__(self)
         self.__account_id = account_id
-        self.__alert_configuration = None
-        self.__billing_system_id = None
-        self.__cloud_subscription = None
-        self.__configured = None
-        self.__customer = None
-        self.__default_budget = None
-        self.__dns_automation = None
-        self.__name = None
-        self.__owner = None
-        self.__plan_id = None
-        self.__provisioned = None
         self.__status = None
-        self.__subscribed = None
 
     @property
     def account_id(self):
@@ -99,11 +87,15 @@ class Account(Resource):
         """`str` - The current account payment status"""
         return self.__status
 
+    @status.setter
+    def status(self, status):
+        """Set the status"""
+        self.__status = status
+
     @lazy_property
     def subscribed(self):
         """`bool` - If the account is configured and working with DCM"""
         return self.__subscribed
-
 
     @classmethod
     def all(cls, keys_only = False, **kwargs):
@@ -124,7 +116,6 @@ class Account(Resource):
         :returns: `list` of :class:`Account` or :attr:`account_id`
         :raises: :class:`AccountException`
         """
-
         res = Resource(cls.PATH)
         if 'detail' in kwargs:
             res.request_details = kwargs['detail']
@@ -139,11 +130,9 @@ class Account(Resource):
         acc = res.get(params=params)
         if res.last_error is None:
             if keys_only is True:
-                return [i[camelize(cls.PRIMARY_KEY)] for i \
-                in acc[cls.COLLECTION_NAME]]
+                return [i[camelize(cls.PRIMARY_KEY)] for i in acc[cls.COLLECTION_NAME]]
             else:
-                return [cls(i[camelize(cls.PRIMARY_KEY)]) for i \
-                in acc[cls.COLLECTION_NAME]]
+                return [acc[cls.COLLECTION_NAME]]
         else:
             raise AccountException(res.last_error)
     
