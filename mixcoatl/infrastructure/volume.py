@@ -60,9 +60,9 @@ class Volume(Resource):
         return self.__name
 
     @name.setter
-    def name(self, b):
+    def name(self, name):
         # pylint: disable-msg=C0111,W0201
-        self.__name = b
+        self.__name = name
 
     @lazy_property
     def label(self):
@@ -70,13 +70,13 @@ class Volume(Resource):
         return self.__label
 
     @label.setter
-    def label(self, b):
+    def label(self, label):
         # pylint: disable-msg=C0111,W0201
-        self.__label = b
+        self.__label = label
 
     @lazy_property
     def encrypted(self):
-        """`bool` - Indicates if the volume is known by enStratus as encrypted"""
+        """`bool` - Indicates if the volume is known by DCM as encrypted"""
         return self.__encrypted
 
     @lazy_property
@@ -90,18 +90,18 @@ class Volume(Resource):
         return self.__budget
 
     @budget.setter
-    def budget(self, b):
+    def budget(self, budget):
         # pylint: disable-msg=C0111,W0201
-        self.__budget = b
+        self.__budget = budget
 
     @lazy_property
     def server(self):
-        """`dict` or `None` - The server to which this volume is attached if any"""
+        """`dict` or `None` - The server to which the volume is attached"""
         return self.__server
 
     @lazy_property
     def owning_groups(self):
-        """`list` - The groups who have ownership of this volume in enStratus"""
+        """`list` - The groups who have ownership of this volume in DCM"""
         return self.__owning_groups
 
 #    @owning_groups.setter
@@ -120,7 +120,7 @@ class Volume(Resource):
 
     @lazy_property
     def status(self):
-        """`str` - The status of the volume in enStratus"""
+        """`str` - The status of the volume in DCM"""
         return self.__status
 
     @lazy_property
@@ -134,12 +134,12 @@ class Volume(Resource):
         return self.__data_center
 
     @data_center.setter
-    def data_center(self, dc):
-        self.__data_center = {'data_center_id': dc}
+    def data_center(self, dcs):
+        self.__data_center = {'data_center_id': dcs}
 
     @lazy_property
     def owning_account(self):
-        """`dict` - the enStratus account under which this volume is registered"""
+        """`dict` - the DCM account under which this volume is registered"""
         return self.__owning_account
 
     @lazy_property
@@ -154,7 +154,7 @@ class Volume(Resource):
 
     @lazy_property
     def owning_user(self):
-        """`dict` - The enStratus user who is the owner of this volume"""
+        """`dict` - The DCM user who is the owner of this volume"""
         return self.__owning_user
 
     @lazy_property
@@ -164,13 +164,13 @@ class Volume(Resource):
 
     @lazy_property
     def description(self):
-        """`str` - The description of the volume in enStratus"""
+        """`str` - The description of the volume in DCM"""
         return self.__description
 
     @description.setter
-    def description(self, b):
+    def description(self, desc):
         # pylint: disable-msg=C0111,W0201
-        self.__description = b
+        self.__description = desc
 
     @required_attrs(['volume_id'])
     def attach(self, server_id, device_id=None, callback=None):
@@ -189,7 +189,8 @@ class Volume(Resource):
         if device_id is not None:
             payload['attach'][0]['device_id'] = device_id
 
-        self.put(self.PATH+'/'+str(self.volume_id), data=json.dumps(camel_keys(payload)))
+        self.put(self.PATH+'/'+str(self.volume_id), 
+                 data=json.dumps(camel_keys(payload)))
 
         if self.last_error is None:
             if callback is None:
@@ -208,17 +209,21 @@ class Volume(Resource):
         """
         payload = '{"detach":[{}]}'
         path = self.PATH+'/'+str(self.volume_id)
-        s = self.put(path, data=payload)
+        serv = self.put(path, data=payload)
         if self.last_error is None:
             self.load()
             if callback is None:
-                return s
+                return serv
             else:
-                callback(s)
+                callback(serv)
         else:
             raise VolumeException(self.last_error)
 
-    @required_attrs(['budget', 'size_in_gb', 'description', 'data_center', 'name'])
+    @required_attrs(['budget', 
+                    'size_in_gb', 
+                    'description', 
+                    'data_center', 
+                    'name'])
     def create(self, callback=None):
         """Creates a new volume
 
@@ -230,19 +235,19 @@ class Volume(Resource):
 
         optional_attrs = ['label']
         if self.volume_id is not None:
-            raise VolumeCreationException('Cannot create an already created volume: %s' % self.volume_id)
+            raise VolumeCreationException('Cannot create an already created \
+                                          volume: %s' % self.volume_id)
 
-        parms = {
-                    'name': self.name,
-                    'description': self.description,
-                    'data_center': self.data_center,
-                    'size_in_gb': self.size_in_gb,
-                    'budget' : self.budget}
+        parms = {'name': self.name,
+                'description': self.description,
+                'data_center': self.data_center,
+                'size_in_gb': self.size_in_gb,
+                'budget' : self.budget}
 
-        for oa in optional_attrs:
+        for oas in optional_attrs:
             try:
-                if getattr(self, oa) is not None:
-                    parms[0].update({oa: getattr(self, oa)})
+                if getattr(self, oas) is not None:
+                    parms[0].update({oas: getattr(self, oas)})
             except AttributeError:
                 pass
 
@@ -272,7 +277,7 @@ class Volume(Resource):
         else:
             self._change_metadata()
 
-    def destroy(self,reason=None):
+    def destroy(self, reason=None):
         """Deletes the volume
 
         :param reason: Reason for removing the volume
@@ -280,23 +285,24 @@ class Volume(Resource):
         :returns: `bool`
         :raises: :class:`VolumeException`
         """
-        p = self.PATH + "/" + str(self.volume_id)
+        path = self.PATH + "/" + str(self.volume_id)
         qopts = {'reason': reason}
-        return self.delete(p, params=qopts)
+        return self.delete(path, params=qopts)
 
     def _change_metadata(self):
         """Changes metadata"""
         new_vals = {}
-        for x in ['name', 'description', 'label']:
-            if x in self.pending_changes:
-                new_val = self.pending_changes[x]['new']
-                new_vals[camel_keys(x)] = new_val
-                self.pending_changes.pop(x, None)
+        for cmd in ['name', 'description', 'label']:
+            if cmd in self.pending_changes:
+                new_val = self.pending_changes[cmd]['new']
+                new_vals[camel_keys(cmd)] = new_val
+                self.pending_changes.pop(cmd, None)
         if len(new_vals) == 0:
             pass
         else:
             payload = {'describeVolume':[new_vals]}
-            self.put(self.PATH+'/'+str(self.volume_id), data=json.dumps(payload))
+            self.put(self.PATH+'/'+str(self.volume_id), 
+                     data=json.dumps(payload))
             if self.last_error is None:
                 self.load()
                 return True
@@ -311,7 +317,8 @@ class Volume(Resource):
             pass
         else:
             payload = {'assignBudget':[{'budget': self.budget}]}
-            self.put(self.PATH+'/'+str(self.volume_id), data=json.dumps(payload))
+            self.put(self.PATH+'/'+str(self.volume_id), 
+                     data=json.dumps(payload))
             if self.last_error is None:
                 self.load()
                 return True
@@ -328,15 +335,20 @@ class Volume(Resource):
             .. warning::
 
                 Snapshot creation is an asynchronous task.
-                Specifying a callback will cause a blocking operation while the snapshot completes
-                When using the callback, execution could block for a **VERY** long time.
+                Specifying a callback will cause a blocking operation while 
+                the snapshot completes
+                When using the callback, execution could block for a **VERY** 
+                long time.
 
 
-        :param name: The name to assign the Snapshot. Default: `snap-<volume_id>-timestamp`
+        :param name: The name to assign the Snapshot. 
+            Default: `snap-<volume_id>-timestamp`
         :type name: str.
-        :param description: Description of the snapshot. Default: `mixcoatl snapshot`
+        :param description: Description of the snapshot. 
+            Default: `mixcoatl snapshot`
         :type description: str.
-        :param budget: Budget to assign the snapshot. Default: :attr:`budget` of the current :class:`Volume`
+        :param budget: Budget to assign the snapshot. 
+            Default: :attr:`budget` of the current :class:`Volume`
         :type budget: int.
         :param callback: Optional callback to return the results.
         :type callback: func.
@@ -362,14 +374,13 @@ class Volume(Resource):
         else:
             callback = None
         try:
-            s = Snapshot.add_snapshot(self.volume_id,
+            return Snapshot.add_snapshot(self.volume_id,
                                     name,
                                     description,
                                     budget,
                                     callback=callback)
-            return s
-        except SnapshotException, e:
-            raise VolumeSnapshotException(str(e))
+        except SnapshotException, error:
+            raise VolumeSnapshotException(str(error))
 
     @classmethod
     def all(cls, **kwargs):
@@ -389,12 +400,11 @@ class Volume(Resource):
         :raises: :class:`VolumeException`
         """
         params = {}
-        r = Resource(cls.PATH)
-        r.request_details = 'none'
+        res = Resource(cls.PATH)
+        res.request_details = 'basic'
+
         if 'detail' in kwargs:
-            request_details = kwargs['detail']
-        else:
-            request_details = 'extended'
+            res.request_details = kwargs['detail']
 
         if 'keys_only' in kwargs:
             keys_only = kwargs['keys_only']
@@ -408,22 +418,17 @@ class Volume(Resource):
         if 'account_id' in kwargs:
             params['accountId'] = kwargs['account_id']
 
-        x = r.get(params=params)
-        if r.last_error is None:
-            keys = [i[camelize(cls.PRIMARY_KEY)] for i in x[cls.COLLECTION_NAME]]
+        xall = res.get(params=params)
+        if res.last_error is None:
+            keys = [i[camelize(cls.PRIMARY_KEY)] \
+            for i in xall[cls.COLLECTION_NAME]]
             if keys_only is True:
-                volumes = keys
+                return keys
             else:
-                volumes = []
-                for i in x[cls.COLLECTION_NAME]:
-                    key = i[camelize(cls.PRIMARY_KEY)]
-                    volume = cls(key)
-                    volume.request_details = request_details
-                    volume.load()
-                    volumes.append(volume)
-            return volumes
+                return [cls(i[camelize(cls.PRIMARY_KEY)]) \
+                for i in xall[cls.COLLECTION_NAME]]
         else:
-            raise VolumeException(r.last_error)
+            raise VolumeException(res.last_error)
 
 def assign_budget(volume_id, budget):
     """Change the budget associated with a volume
@@ -435,11 +440,11 @@ def assign_budget(volume_id, budget):
     :returns: `bool`
     :raises: :class:`VolumeException`
     """
-    v = Volume(volume_id)
-    v.budget = budget
-    return v.update()
+    vols = Volume(volume_id)
+    vols.budget = budget
+    return vols.update()
 
-def assign_groups(volume_id, group_id):
+def assign_groups():
     """Change the group ownership of a volume
 
     :param volume_id: The volume id to work with
@@ -470,9 +475,9 @@ def attach_volume(volume_id, server_id, device_id=None, callback=None):
     :raises: :class:`VolumeException`
     """
 
-    v = Volume(volume_id)
-    v.request_details = 'basic'
-    v.attach(server_id, device_id, callback)
+    vols = Volume(volume_id)
+    vols.request_details = 'basic'
+    vols.attach(server_id, device_id, callback)
 
 def describe_volume(volume_id, **kwargs):
     """Change the enStratus meta-data of a volume
@@ -492,12 +497,12 @@ def describe_volume(volume_id, **kwargs):
     if kwargs is None:
         pass
     else:
-        v = Volume(volume_id)
-        v.request_details = 'basic'
+        vols = Volume(volume_id)
+        vols.request_details = 'basic'
         for attr in kwargs:
-            setattr(v, attr, kwargs[attr])
-        v.update()
-        return v
+            setattr(vols, attr, kwargs[attr])
+        vols.update()
+        return vols
 
 def add_volume(**kwargs):
     """Create a new volume
@@ -512,13 +517,13 @@ def add_volume(**kwargs):
     :raises: :class:`VolumeCreationException`
     """
 
-    v = Volume()
-    cb = kwargs.pop('callback', None)
+    vols = Volume()
+    cbs = kwargs.pop('callback', None)
 
     for attr in kwargs:
-        setattr(v, attr, kwargs[attr])
+        setattr(vols, attr, kwargs[attr])
 
-    v.create(callback=cb)
+    vols.create(callback=cbs)
 
 def detach_volume(volume_id, callback=None):
     """Detach a volume from a server
@@ -530,8 +535,8 @@ def detach_volume(volume_id, callback=None):
     :raises: :class:`VolumeException`
     """
 
-    v = Volume(volume_id)
-    v.detach(callback=callback)
+    vols = Volume(volume_id)
+    vols.detach(callback=callback)
 
 class VolumeException(BaseException):
     """Generic Volume Exception"""
